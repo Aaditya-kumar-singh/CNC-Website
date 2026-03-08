@@ -1,0 +1,151 @@
+const jwt = require('jsonwebtoken');
+const { successResponse, errorResponse } = require('../utils/responseHandler');
+const authService = require('../services/auth.service');
+const sendEmail = require('../services/email.service');
+
+const signToken = (id) => {
+    return jwt.sign({ id }, process.env.JWT_SECRET, {
+        expiresIn: process.env.JWT_EXPIRES_IN
+    });
+};
+
+const createSendToken = (user, statusCode, res) => {
+    const token = signToken(user._id);
+
+    // Remove password from output
+    user.password = undefined;
+
+    successResponse(res, statusCode, {
+        token,
+        data: { user }
+    });
+};
+
+exports.register = async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
+
+        if (!name || !email || !password) {
+            return errorResponse(res, 400, 'Please provide name, email, and password');
+        }
+
+        if (password.length < 6) {
+            return errorResponse(res, 400, 'Password must be at least 6 characters long');
+        }
+
+        // Basic email format validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return errorResponse(res, 400, 'Please provide a valid email address');
+        }
+
+        const newUser = await authService.createUser(name, email, password);
+
+        createSendToken(newUser, 201, res);
+    } catch (error) {
+        // Handle duplicate email error from MongoDB specifically
+        if (error.code === 11000) {
+            return errorResponse(res, 400, 'Email is already registered');
+        }
+        errorResponse(res, 400, error.message);
+    }
+};
+
+exports.login = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            return errorResponse(res, 400, 'Please provide email and password');
+        }
+
+        // Basic email format validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return errorResponse(res, 400, 'Please provide a valid email address');
+        }
+
+        const user = await authService.authenticateUser(email, password);
+
+        if (!user) {
+            return errorResponse(res, 401, 'Incorrect email or password');
+        }
+
+        createSendToken(user, 200, res);
+    } catch (error) {
+        errorResponse(res, 400, error.message);
+    }
+};
+
+exports.getMe = async (req, res) => {
+    try {
+        const user = await authService.getUserProfile(req.user.id);
+        successResponse(res, 200, {
+            data: { user }
+        });
+    } catch (error) {
+        errorResponse(res, 400, error.message);
+    }
+};
+
+exports.forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) return errorResponse(res, 400, 'Please provide your email');
+
+        const result = await authService.createPasswordResetToken(email);
+
+        // Return 200 immediately even if user doesn't exist (security: prevents email enumeration)
+        if (!result) {
+            return successResponse(res, 200, { message: 'If this email exists in our system, a reset link has been sent.' });
+        }
+
+        const resetURL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password/${result.resetToken}`;
+        const message = `Forgot your password? Click here to reset it:\n${resetURL}\nIf you didn't forget your password, please ignore this email!`;
+
+        try {
+            await sendEmail({
+                email: result.user.email,
+                subject: 'Your Password Reset Token (Valid for 10 minutes)',
+                message
+            });
+            successResponse(res, 200, { message: 'If this email exists in our system, a reset link has been sent.' });
+        } catch (err) {
+            result.user.resetPasswordToken = undefined;
+            result.user.resetPasswordExpire = undefined;
+            await result.user.save({ validateBeforeSave: false });
+            return errorResponse(res, 500, 'There was an error sending the email. Try again later.');
+        }
+
+    } catch (error) {
+        errorResponse(res, 400, error.message);
+    }
+};
+
+exports.resetPassword = async (req, res) => {
+    try {
+        const { token } = req.params;
+        const { password } = req.body;
+
+        if (!password || password.length < 6) {
+            return errorResponse(res, 400, 'Password must be at least 6 characters long');
+        }
+
+        const user = await authService.resetPassword(token, password);
+        createSendToken(user, 200, res); // Logs them in automatically
+    } catch (error) {
+        errorResponse(res, 400, error.message);
+    }
+};
+
+exports.getMyPurchases = async (req, res) => {
+    try {
+        const user = await authService.getUserWithPurchases(req.user.id);
+        successResponse(res, 200, {
+            data: { designs: user.purchasedDesigns }
+        });
+    } catch (error) {
+        errorResponse(res, 400, error.message);
+    }
+};
+
