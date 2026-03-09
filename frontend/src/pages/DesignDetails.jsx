@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getDesignById, getDownloadLink, deleteDesign, updateDesign } from '../services/design.service';
-import { createOrder, verifyPayment, loadRazorpayScript } from '../services/payment.service';
+import { createOrder } from '../services/payment.service';
 import { getDesignReviews, createReview } from '../services/review.service';
 import { AuthContext } from '../context/AuthContext';
 import { toggleWishlist, toggleCart } from '../services/auth.service';
@@ -226,55 +226,20 @@ const DesignDetails = () => {
 
         try {
             setProcessing(true);
-            const isLoaded = await loadRazorpayScript();
 
-            if (!isLoaded) {
-                toast.error('Razorpay SDK failed to load');
-                return;
-            }
-
-            // Fix #14: Pass design ID inside an array to conform to multi-item cart standard
+            // Pass design ID inside an array to conform to multi-item cart standard
             const orderData = await createOrder([id]);
 
-            const options = {
-                key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'dummy_key', // From env config
-                amount: orderData.order.amount,
-                currency: "INR",
-                name: "CNC Market",
-                description: `Lifetime access to ${design.title}`,
-                order_id: orderData.order.id,
-                handler: async function (response) {
-                    try {
-                        toast.loading('Verifying payment...', { id: 'payment' });
-                        await verifyPayment({
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_signature: response.razorpay_signature
-                        });
-                        toast.success('Payment successful! Preparing your download...', { id: 'payment' });
-
-                        // Refresh user context to get updated purchasedDesigns (no reload needed)
-                        await refreshUser();
-                        toast.success('Design unlocked! You can now download.', { id: 'payment' });
-                    } catch (err) {
-                        toast.error(err.message || 'Payment verification failed', { id: 'payment' });
-                    }
-                },
-                prefill: {
-                    name: user.name,
-                    email: user.email,
-                },
-                theme: {
-                    color: "#111111",
-                }
-            };
-
-            const rzp = new window.Razorpay(options);
-            rzp.open();
+            if (orderData.sessionUrl) {
+                // Redirect user to Stripe Checkout
+                window.location.href = orderData.sessionUrl;
+            } else {
+                toast.error('Failed to initialize checkout session');
+                setProcessing(false);
+            }
 
         } catch (error) {
             toast.error(error.message || 'Failed to initialize checkout');
-        } finally {
             setProcessing(false);
         }
     };

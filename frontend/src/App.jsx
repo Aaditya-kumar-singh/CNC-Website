@@ -20,6 +20,7 @@ import NotFound from './pages/NotFound';
 import Category from './pages/Category';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import PaymentSuccess from './pages/PaymentSuccess';
 
 function App() {
   return (
@@ -65,6 +66,12 @@ function App() {
               <Route path="/cart" element={
                 <ProtectedRoute>
                   <Cart />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/payment-success" element={
+                <ProtectedRoute>
+                  <PaymentSuccess />
                 </ProtectedRoute>
               } />
 

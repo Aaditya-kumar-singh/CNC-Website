@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { getMyCart, toggleCart } from '../services/auth.service';
-import { createOrder, verifyPayment, loadRazorpayScript } from '../services/payment.service';
+import { createOrder } from '../services/payment.service';
 import { ShoppingCart, Trash2, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import PriceTag from '../components/PriceTag';
@@ -52,54 +52,20 @@ const Cart = () => {
 
         try {
             setProcessing(true);
-            const isLoaded = await loadRazorpayScript();
-
-            if (!isLoaded) {
-                toast.error('Razorpay SDK failed to load');
-                return;
-            }
 
             const designIds = cartDesigns.map(d => d._id);
             const orderData = await createOrder(designIds);
 
-            const options = {
-                key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'dummy_key',
-                amount: orderData.order.amount,
-                currency: "INR",
-                name: "CNC Market",
-                description: `Purchase of ${cartDesigns.length} designs`,
-                order_id: orderData.order.id,
-                handler: async function (response) {
-                    try {
-                        toast.loading('Verifying payment...', { id: 'payment' });
-                        await verifyPayment({
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_signature: response.razorpay_signature
-                        });
-                        toast.success('Payment successful! Designs added to your library.', { id: 'payment' });
-
-                        await refreshUser();
-                        navigate('/my-purchases');
-                    } catch (err) {
-                        toast.error(err.message || 'Payment verification failed', { id: 'payment' });
-                    }
-                },
-                prefill: {
-                    name: user?.name,
-                    email: user?.email,
-                },
-                theme: {
-                    color: "#111111",
-                }
-            };
-
-            const rzp = new window.Razorpay(options);
-            rzp.open();
+            if (orderData.sessionUrl) {
+                // Redirect user to Stripe Checkout
+                window.location.href = orderData.sessionUrl;
+            } else {
+                toast.error('Failed to initialize checkout session');
+                setProcessing(false);
+            }
 
         } catch (error) {
             toast.error(error.message || 'Failed to initialize checkout');
-        } finally {
             setProcessing(false);
         }
     };

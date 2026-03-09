@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
-    "test": "jest"
+    "start": "cross-env NODE_ENV=production node src/server.js",
+    "dev": "cross-env NODE_ENV=development nodemon src/server.js",
+    "test": "cross-env NODE_ENV=test jest"
   },
   "keywords": [],
   "author": "",
@@ -30,9 +30,11 @@
     "multer-storage-cloudinary": "^4.0.0",
     "nodemailer": "^8.0.1",
     "razorpay": "^2.9.6",
+    "stripe": "^20.4.1",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "cross-env": "^10.1.0",
     "jest": "^30.2.0",
     "nodemon": "^3.1.14"
   }

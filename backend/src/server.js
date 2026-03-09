@@ -1,4 +1,17 @@
-require('dotenv').config();
+const dotenv = require('dotenv');
+const path = require('path');
+const fs = require('fs');
+
+// Determine environment
+const envName = process.env.NODE_ENV || 'development';
+const envFilePath = path.resolve(process.cwd(), `.env.${envName}`);
+
+// Load appropriate environment file if it exists, otherwise fallback to default .env
+if (fs.existsSync(envFilePath)) {
+    dotenv.config({ path: envFilePath });
+} else {
+    dotenv.config();
+}
 const mongoose = require('mongoose');
 const app = require('./app');
 const connectDB = require('./config/db');

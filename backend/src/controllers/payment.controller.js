@@ -2,7 +2,7 @@ const Design = require('../models/Design.model');
 const { successResponse, errorResponse, serverError } = require('../utils/responseHandler');
 const paymentService = require('../services/payment.service');
 
-// Create order for Razorpay UI (Single or Multiple items)
+// Create order for Stripe checkout (Single or Multiple items)
 exports.createOrder = async (req, res) => {
     try {
         const { designIds } = req.body;
@@ -17,18 +17,17 @@ exports.createOrder = async (req, res) => {
             return errorResponse(res, 404, 'One or more designs not found');
         }
 
-        // Filter out any free designs just in case they were passed (although free = download directly without razorpay)
+        // Filter out any free designs just in case they were passed (although free = download directly without stripe)
         const chargeableDesigns = designs.filter(d => d.price > 0);
 
         if (chargeableDesigns.length === 0) {
             return errorResponse(res, 400, 'No chargeable designs in request. Use direct download for free designs.');
         }
 
-        const order = await paymentService.createRazorpayOrder(chargeableDesigns, req.user.id);
+        const session = await paymentService.createOrderSession(chargeableDesigns, req.user.id);
 
-        successResponse(res, 200, { order });
+        successResponse(res, 200, { sessionUrl: session.url, sessionId: session.id });
     } catch (error) {
-        // Fix #2: duplicate purchase is a 400 client error, not a 500 server crash
         if (error.message === 'You have already purchased one or more of these designs.') {
             return errorResponse(res, 400, error.message);
         }
@@ -39,23 +38,18 @@ exports.createOrder = async (req, res) => {
 // Verify payment signature
 exports.verifyPayment = async (req, res) => {
     try {
-        const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+        const { session_id } = req.body;
 
-        if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-            return errorResponse(res, 400, 'Missing payment verification details');
+        if (!session_id) {
+            return errorResponse(res, 400, 'Missing payment session details');
         }
 
-        const isVerified = await paymentService.verifyAndFulfillPayment(
-            razorpay_order_id,
-            razorpay_payment_id,
-            razorpay_signature,
-            req.user.id
-        );
+        const isVerified = await paymentService.verifyAndFulfillPayment(session_id, req.user.id);
 
         if (isVerified) {
             return successResponse(res, 200, { message: 'Payment verified successfully' });
         } else {
-            return errorResponse(res, 400, 'Invalid signature. Payment failed');
+            return errorResponse(res, 400, 'Payment verification failed');
         }
     } catch (error) {
         serverError(res, error);

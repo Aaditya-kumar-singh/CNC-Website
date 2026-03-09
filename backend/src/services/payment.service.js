@@ -1,9 +1,8 @@
-const razorpay = require('../config/razorpay');
-const crypto = require('crypto');
 const Order = require('../models/Order.model');
 const User = require('../models/User.model');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
-exports.createRazorpayOrder = async (designs, userId) => {
+exports.createOrderSession = async (designs, userId) => {
     // Collect IDs
     const designIds = designs.map(d => d._id);
 
@@ -21,56 +20,80 @@ exports.createRazorpayOrder = async (designs, userId) => {
     // Calculate total amount
     const totalAmount = designs.reduce((sum, design) => sum + design.price, 0);
 
-    const options = {
-        amount: totalAmount * 100, // Amount in paise
-        currency: "INR",
-        receipt: `rcpt_${Date.now()}`
-    };
-
-    const order = await razorpay.orders.create(options);
+    const lineItems = designs.map(design => ({
+        price_data: {
+            currency: 'inr',
+            product_data: {
+                name: design.title,
+                description: design.description ? design.description.substring(0, 255) : 'Premium CNC Design',
+            },
+            unit_amount: Math.round(design.price * 100), // Amount in paise
+        },
+        quantity: 1,
+    }));
 
     // Save order in DB (pending)
-    await Order.create({
+    const orderDoc = await Order.create({
         userId: userId,
         designIds: designIds,
         amount: totalAmount,
-        orderId: order.id
+        orderId: 'pending_' + Date.now()
     });
 
-    return order;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+    const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: lineItems,
+        mode: 'payment',
+        success_url: `${frontendUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${frontendUrl}/cart?canceled=true`,
+        client_reference_id: orderDoc._id.toString(),
+        metadata: {
+            userId: userId.toString(),
+            orderId: orderDoc._id.toString()
+        }
+    });
+
+    // Update order with stripe session id
+    orderDoc.orderId = session.id;
+    await orderDoc.save();
+
+    return session;
 };
 
-exports.verifyAndFulfillPayment = async (orderId, paymentId, signature, userId) => {
-    const sign = orderId + "|" + paymentId;
-    const expectedSign = crypto
-        .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-        .update(sign.toString())
-        .digest("hex");
+exports.verifyAndFulfillPayment = async (sessionId, userId) => {
+    try {
+        const session = await stripe.checkout.sessions.retrieve(sessionId);
 
-    if (signature === expectedSign) {
-        // Payment Successful
-        // Update Order Status
-        const order = await Order.findOneAndUpdate(
-            { orderId: orderId },
-            { paymentStatus: 'success', paymentId: paymentId },
-            { new: true }
-        );
+        if (session.payment_status === 'paid') {
+            // Payment Successful
+            // Update Order Status
+            const order = await Order.findOne({ orderId: sessionId });
 
-        if (order) {
-            // Add to user purchased library, and clear the cart!
-            await User.findByIdAndUpdate(userId, {
-                $addToSet: { purchasedDesigns: { $each: order.designIds } },
-                $set: { cart: [] } // Clear cart on successful purchase
-            });
+            if (order && order.paymentStatus !== 'success') {
+                order.paymentStatus = 'success';
+                order.paymentId = session.payment_intent || session.id;
+                await order.save();
+
+                // Add to user purchased library, and clear the cart!
+                await User.findByIdAndUpdate(userId, {
+                    $addToSet: { purchasedDesigns: { $each: order.designIds } },
+                    $set: { cart: [] } // Clear cart on successful purchase
+                });
+            }
+
+            return true;
+        } else {
+            // Payment Failed or Pending
+            await Order.findOneAndUpdate(
+                { orderId: sessionId },
+                { paymentStatus: 'failed', paymentId: session.payment_intent || session.id }
+            );
+            return false;
         }
-
-        return true;
-    } else {
-        // Payment Failed
-        await Order.findOneAndUpdate(
-            { orderId: orderId },
-            { paymentStatus: 'failed', paymentId: paymentId }
-        );
+    } catch (error) {
+        console.error('Stripe verification error:', error);
         return false;
     }
 };
