@@ -1,14 +1,17 @@
 const express = require('express');
 const authController = require('../controllers/auth.controller');
 const { protect } = require('../middlewares/auth.middleware');
+const { authLimiter, forgotPasswordLimiter } = require('../middlewares/rateLimit.middleware');
 
 const router = express.Router();
 
-router.post('/register', authController.register);
-router.post('/login', authController.login);
-router.post('/forgot-password', authController.forgotPassword);
-router.patch('/reset-password/:token', authController.resetPassword);
+// Public — rate-limited tightly to prevent brute force
+router.post('/register', authLimiter, authController.register);
+router.post('/login', authLimiter, authController.login);
+router.post('/forgot-password', forgotPasswordLimiter, authController.forgotPassword);
+router.patch('/reset-password/:token', authLimiter, authController.resetPassword);
 
+// Protected
 router.get('/me', protect, authController.getMe);
 router.get('/my-purchases', protect, authController.getMyPurchases);
 router.get('/my-wishlist', protect, authController.getMyWishlist);

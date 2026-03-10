@@ -6,19 +6,20 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Please provide your name'],
         trim: true,
-        maxlength: [100, 'Name cannot exceed 100 characters'], // Fix #10
+        maxlength: [100, 'Name cannot exceed 100 characters'],
     },
     email: {
         type: String,
         required: [true, 'Please provide your email'],
         unique: true,
         lowercase: true,
+        trim: true,
     },
     password: {
         type: String,
         required: [true, 'Please provide a password'],
-        minlength: 6,
-        select: false, // Don't return password by default
+        minlength: 8,
+        select: false, // Never returned in queries by default
     },
     role: {
         type: String,
@@ -51,23 +52,43 @@ const userSchema = new mongoose.Schema({
     subscriptionPeriodEnd: Date,
     lastAbandonedCartEmailSentAt: Date,
     resetPasswordToken: String,
-    resetPasswordExpire: Date
+    resetPasswordExpire: Date,
+    // Track when password last changed so old JWTs auto-invalidate
+    passwordChangedAt: Date,
 }, {
     timestamps: true
 });
 
-// Encrypt password before saving
+// ─── Hash password on save ────────────────────────────────────────────────────
 userSchema.pre('save', async function () {
     if (!this.isModified('password')) return;
+
     this.password = await bcrypt.hash(this.password, 12);
+
+    // Record the change time so tokens issued before this are rejected.
+    // Subtract 1 second as a buffer for the JWT iat clock skew.
+    if (!this.isNew) {
+        this.passwordChangedAt = new Date(Date.now() - 1000);
+    }
 });
 
-// Compare password
+// ─── Compare password (used in login) ────────────────────────────────────────
 userSchema.methods.comparePassword = async function (candidatePassword, userPassword) {
     return await bcrypt.compare(candidatePassword, userPassword);
 };
 
-// Fix #5: index on resetPasswordToken for fast lookup during password reset
+// ─── Invalidate tokens issued before a password change ───────────────────────
+// Returns true if user changed password AFTER the token was issued
+userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
+    if (this.passwordChangedAt) {
+        const changedTimestamp = parseInt(this.passwordChangedAt.getTime() / 1000, 10);
+        return JWTTimestamp < changedTimestamp;
+    }
+    return false; // Not changed — token is still valid
+};
+
+// ─── Indexes ──────────────────────────────────────────────────────────────────
+userSchema.index({ email: 1 });
 userSchema.index({ resetPasswordToken: 1 });
 
 module.exports = mongoose.model('User', userSchema);

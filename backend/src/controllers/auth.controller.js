@@ -23,14 +23,33 @@ const createSendToken = (user, statusCode, res) => {
 
 exports.register = async (req, res) => {
     try {
-        const { name, email, password } = req.body;
+        const { name, password } = req.body;
+        const email = (req.body.email || '').toLowerCase().trim();
 
         if (!name || !email || !password) {
             return errorResponse(res, 400, 'Please provide name, email, and password');
         }
 
-        if (password.length < 6) {
-            return errorResponse(res, 400, 'Password must be at least 6 characters long');
+        // Sanitize name — strip HTML/script and limit characters
+        const safeName = name.trim().replace(/<[^>]*>/g, '').substring(0, 100);
+        if (!safeName) {
+            return errorResponse(res, 400, 'Please provide a valid name');
+        }
+
+        // =================================================================
+        // Password strength: min 8 chars, 1 uppercase, 1 lowercase, 1 digit
+        // =================================================================
+        if (password.length < 8) {
+            return errorResponse(res, 400, 'Password must be at least 8 characters long');
+        }
+        if (!/[A-Z]/.test(password)) {
+            return errorResponse(res, 400, 'Password must contain at least one uppercase letter');
+        }
+        if (!/[a-z]/.test(password)) {
+            return errorResponse(res, 400, 'Password must contain at least one lowercase letter');
+        }
+        if (!/[0-9]/.test(password)) {
+            return errorResponse(res, 400, 'Password must contain at least one number');
         }
 
         // Basic email format validation
@@ -39,11 +58,10 @@ exports.register = async (req, res) => {
             return errorResponse(res, 400, 'Please provide a valid email address');
         }
 
-        const newUser = await authService.createUser(name, email, password);
+        const newUser = await authService.createUser(safeName, email, password);
 
         createSendToken(newUser, 201, res);
     } catch (error) {
-        // Handle duplicate email error from MongoDB specifically
         if (error.code === 11000) {
             return errorResponse(res, 400, 'Email is already registered');
         }
@@ -53,13 +71,13 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { password } = req.body;
+        const email = (req.body.email || '').toLowerCase().trim();
 
         if (!email || !password) {
             return errorResponse(res, 400, 'Please provide email and password');
         }
 
-        // Basic email format validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             return errorResponse(res, 400, 'Please provide a valid email address');
@@ -68,12 +86,14 @@ exports.login = async (req, res) => {
         const user = await authService.authenticateUser(email, password);
 
         if (!user) {
+            // Use same generic message for both "user not found" and "wrong password"
+            // to prevent user enumeration attacks
             return errorResponse(res, 401, 'Incorrect email or password');
         }
 
         createSendToken(user, 200, res);
     } catch (error) {
-        errorResponse(res, 400, error.message);
+        errorResponse(res, 401, 'Incorrect email or password');
     }
 };
 

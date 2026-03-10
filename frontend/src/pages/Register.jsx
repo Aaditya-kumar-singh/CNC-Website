@@ -193,8 +193,8 @@ const Register = () => {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     className="w-full pl-4 pr-12 py-3.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-500 transition-all font-medium text-gray-900 placeholder-gray-400 shadow-sm"
-                                    placeholder="Min. 6 characters"
-                                    minLength={6}
+                                    placeholder="Min. 8 characters"
+                                    minLength={8}
                                     required
                                 />
                                 <button
@@ -207,7 +207,7 @@ const Register = () => {
                             </div>
                             <p className="mt-1.5 text-xs font-medium text-gray-400 flex items-center gap-1">
                                 <CheckCircle2 size={12} className="text-green-500" />
-                                At least 6 characters
+                                Min. 8 characters · 1 uppercase · 1 lowercase · 1 number
                             </p>
                         </div>
 

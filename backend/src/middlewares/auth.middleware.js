@@ -16,11 +16,19 @@ exports.protect = async (req, res, next) => {
             return errorResponse(res, 401, 'You are not logged in. Please log in to get access.');
         }
 
+        // Verify token signature and expiry
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+        // Check user still exists (not deleted)
         const currentUser = await User.findById(decoded.id);
         if (!currentUser) {
             return errorResponse(res, 401, 'The user belonging to this token no longer exists.');
+        }
+
+        // Check if user changed password AFTER the token was issued
+        // This invalidates all tokens issued before the last password change
+        if (currentUser.changedPasswordAfter(decoded.iat)) {
+            return errorResponse(res, 401, 'Your password was recently changed. Please log in again.');
         }
 
         req.user = currentUser;

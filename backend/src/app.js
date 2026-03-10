@@ -2,6 +2,11 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const mongoSanitize = require('express-mongo-sanitize');
+const hpp = require('hpp');
+const path = require('path');
+
+const xssSanitizer = require('./middlewares/sanitize.middleware');
 const { limiter } = require('./middlewares/rateLimit.middleware');
 
 // Routes
@@ -14,45 +19,94 @@ const reviewRouter = require('./routes/review.routes');
 const bundleRouter = require('./routes/bundle.routes');
 
 const app = express();
-const path = require('path');
 
-// 0. Serve static local uploads in development fallback
+// ─── 0. Static uploads (local dev fallback) ──────────────────────────────────
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
-// 1. CORS setup (MUST be first so even rate-limited or blocked requests get CORS headers)
+// ─── 1. CORS ─────────────────────────────────────────────────────────────────
+// Must be FIRST — even rate-limited / blocked requests need CORS headers
 const allowedOrigins = [
     process.env.FRONTEND_URL,
     'http://localhost:5173',
-    'http://localhost:5174' // Vite fallback
-];
+    'http://localhost:5174', // Vite fallback
+].filter(Boolean); // remove undefined if FRONTEND_URL not set
 
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        // or allow any Vercel preview domain dynamically
-        if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+        // No origin → server-to-server / mobile / curl (allow)
+        if (!origin) return callback(null, true);
+        // Explicit allow-list or any Vercel preview domain
+        if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
             return callback(null, true);
         }
-        return callback(new Error('The CORS policy for this site does not allow access from the specified Origin.'), false);
+        return callback(new Error('CORS policy: this origin is not allowed.'), false);
     },
-    credentials: true
+    credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// 2. Security HTTP headers
-app.use(helmet());
+// ─── 2. Security HTTP headers (Helmet) ───────────────────────────────────────
+app.use(helmet({
+    // Allow cross-origin image loading (Cloudinary previews)
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    // Content-Security-Policy: lock down what can run in the browser
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com'],
+            connectSrc: ["'self'", process.env.FRONTEND_URL, 'https://*.vercel.app'].filter(Boolean),
+            scriptSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            frameSrc: ["'none'"],
+            objectSrc: ["'none'"],
+            upgradeInsecureRequests: [],
+        },
+    },
+    // Don't expose server info
+    hidePoweredBy: true,
+    // HSTS: tell browsers to always use HTTPS
+    strictTransportSecurity: {
+        maxAge: 31536000, // 1 year
+        includeSubDomains: true,
+    },
+}));
 
-// 3. Development logging
+// ─── 3. Development logging ───────────────────────────────────────────────────
 if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'));
+} else {
+    // Minimal combined logging in production (method + url + status + response time)
+    app.use(morgan('combined'));
 }
 
-// 4. Rate Limiter (100 requests from same IP per 15 minutes)
+// ─── 4. Global rate limiter (100 req / 15 min / IP) ─────────────────────────
 app.use('/api', limiter);
 
-// 5. Body parser
-app.use(express.json({ limit: '50kb' })); // Raised from 10kb — payment/review payloads need more headroom
+// ─── 5. Body parser (tight limit) ────────────────────────────────────────────
+app.use(express.json({ limit: '50kb' }));
+app.use(express.urlencoded({ extended: true, limit: '50kb' }));
 
-// API Routes
+// ─── 6. NoSQL injection sanitizer ────────────────────────────────────────────
+// Strips $-prefixed MongoDB operators from req.body, req.params, req.query
+app.use(mongoSanitize({
+    replaceWith: '_',
+    onSanitizeError: (req, key) => {
+        console.warn(`[Security] Attempted NoSQL injection on key: ${key} from IP: ${req.ip}`);
+    }
+}));
+
+// ─── 7. XSS sanitizer ────────────────────────────────────────────────────────
+// Strips HTML/script tags from all string fields in req.body, req.query, req.params
+app.use(xssSanitizer);
+
+// ─── 8. HTTP Parameter Pollution prevention ───────────────────────────────────
+// Prevents attackers from duplicating query params (e.g. ?sort=asc&sort=desc)
+app.use(hpp({
+    whitelist: ['sort', 'category', 'fileType', 'priceType', 'limit', 'page'],
+}));
+
+// ─── API Routes ───────────────────────────────────────────────────────────────
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/designs', designRouter);
 app.use('/api/v1/payments', paymentRouter);
@@ -61,44 +115,61 @@ app.use('/api/v1/admin', adminRouter);
 app.use('/api/v1/reviews', reviewRouter);
 app.use('/api/v1/bundles', bundleRouter);
 
-// Handle undefined routes
-app.all('/{*path}', (req, res, next) => {
+// ─── 404 Handler ─────────────────────────────────────────────────────────────
+app.all('/{*path}', (req, res) => {
     res.status(404).json({ error: `Can't find ${req.originalUrl} on this server!` });
 });
 
-// Global Error Handling Middleware (Catches Multer limit errors, malformed JSON, etc)
+// ─── Global Error Handler ─────────────────────────────────────────────────────
+// eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
     let statusCode = err.statusCode || 500;
     let message = err.message || 'Internal Server Error';
 
-    // 1. Handle Multer specific errors
+    // Multer file size exceeded
     if (err.code === 'LIMIT_FILE_SIZE') {
         statusCode = 400;
         message = 'File is too large. Max allowed size is 50MB.';
     }
 
-    // 2. Mongoose Bad ObjectId (Cast Error)
+    // Mongoose Bad ObjectId
     if (err.name === 'CastError') {
         statusCode = 400;
         message = `Invalid ${err.path}: ${err.value}.`;
     }
 
-    // 3. Mongoose Duplicate Key (Fix #3: use err.keyValue — err.errmsg is deprecated in Mongoose v7+)
+    // Mongoose Duplicate Key
     if (err.code === 11000) {
         statusCode = 400;
         const field = Object.keys(err.keyValue || {})[0] || 'field';
         const value = err.keyValue?.[field];
-        message = `${field.charAt(0).toUpperCase() + field.slice(1)} "${value}" is already in use. Please choose another.`;
+        message = `${field.charAt(0).toUpperCase() + field.slice(1)} "${value}" is already in use.`;
     }
 
-    // 4. Mongoose Validation Error
+    // Mongoose Validation Error
     if (err.name === 'ValidationError') {
         statusCode = 400;
         const errors = Object.values(err.errors).map(el => el.message);
         message = `Invalid input data. ${errors.join('. ')}`;
     }
 
-    // Only log real 500 server crashes — not 400-level user errors (bad login, etc.)
+    // JWT errors
+    if (err.name === 'JsonWebTokenError') {
+        statusCode = 401;
+        message = 'Invalid token. Please log in again.';
+    }
+    if (err.name === 'TokenExpiredError') {
+        statusCode = 401;
+        message = 'Your session has expired. Please log in again.';
+    }
+
+    // CORS errors
+    if (err.message && err.message.includes('CORS policy')) {
+        statusCode = 403;
+        message = err.message;
+    }
+
+    // Only log true server errors (not expected 4xx client errors)
     if (statusCode >= 500) {
         console.error('Unhandled Server Error 💥:', err);
     }

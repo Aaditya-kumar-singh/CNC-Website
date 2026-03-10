@@ -2,6 +2,7 @@ const express = require('express');
 const designController = require('../controllers/design.controller');
 const { protect } = require('../middlewares/auth.middleware');
 const { restrictToAdmin } = require('../middlewares/admin.middleware');
+const { uploadLimiter } = require('../middlewares/rateLimit.middleware');
 
 const router = express.Router();
 
@@ -12,6 +13,7 @@ router.route('/')
     .post(
         protect,
         restrictToAdmin,
+        uploadLimiter,
         upload.fields([
             { name: "preview", maxCount: 1 },
             { name: "cnc", maxCount: 1 }
