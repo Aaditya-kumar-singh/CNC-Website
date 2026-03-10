@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getDesignById, getDownloadLink, deleteDesign, updateDesign } from '../services/design.service';
+import { getDesignById, getDownloadLink, deleteDesign, updateDesign, getRelatedDesigns } from '../services/design.service';
 import { createOrder } from '../services/payment.service';
 import { getDesignReviews, createReview } from '../services/review.service';
 import { AuthContext } from '../context/AuthContext';
@@ -46,6 +46,9 @@ const DesignDetails = () => {
     const [myComment, setMyComment] = useState('');
     const [submittingReview, setSubmittingReview] = useState(false);
 
+    // Related designs
+    const [relatedDesigns, setRelatedDesigns] = useState([]);
+
     // Edit state (Admin)
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editForm, setEditForm] = useState({ title: '', description: '', price: 0, category: '' });
@@ -54,13 +57,15 @@ const DesignDetails = () => {
     useEffect(() => {
         const fetchDesign = async () => {
             try {
-                const [designRes, reviewsRes] = await Promise.all([
+                const [designRes, reviewsRes, relatedRes] = await Promise.all([
                     getDesignById(id),
-                    getDesignReviews(id)
+                    getDesignReviews(id),
+                    getRelatedDesigns(id).catch(() => ({ data: { designs: [] } }))
                 ]);
                 setDesign(designRes.data.design);
                 setReviews(reviewsRes.data.reviews || []);
                 setAvgRating(reviewsRes.data.avgRating || 0);
+                setRelatedDesigns(relatedRes.data?.designs || []);
             } catch (error) {
                 toast.error('Failed to load design or reviews');
             } finally {
@@ -258,6 +263,7 @@ const DesignDetails = () => {
         (pid) => pid.toString() === design._id.toString()  // Fix #3: renamed to avoid shadowing outer `id`
     );
     const isOwner = user?._id?.toString() === design.uploadedBy?._id?.toString();
+    const hasSubscriptionCredits = user?.subscriptionStatus === 'active' && user?.downloadsRemaining > 0;
     const fmt = getFileFormat(design);
 
     return (
@@ -408,6 +414,18 @@ const DesignDetails = () => {
                                         </div>
                                         <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-bold tracking-wider">READY</span>
                                     </button>
+                                ) : hasSubscriptionCredits ? (
+                                    <button
+                                        onClick={handleDownloadFree}
+                                        disabled={processing}
+                                        className="w-full flex items-center justify-between px-6 py-4 rounded-full font-bold text-lg cursor-pointer transition-all bg-green-600 text-white hover:bg-green-700 hover:shadow-xl hover:shadow-green-600/20 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed mb-3"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            {processing ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <Download size={24} />}
+                                            <span>Download</span>
+                                        </div>
+                                        <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-bold tracking-wider">USES 1 CREDIT</span>
+                                    </button>
                                 ) : (
                                     <div className="flex flex-col gap-3">
                                         <button
@@ -537,6 +555,38 @@ const DesignDetails = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* Related Designs */}
+                {relatedDesigns.length > 0 && (
+                    <div className="mt-20 border-t border-gray-200 pt-16 lg:col-span-12">
+                        <h2 className="text-3xl font-black text-gray-900 tracking-tight mb-8">Related Designs</h2>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {relatedDesigns.map(rel => {
+                                const relFmt = getFileFormat(rel);
+                                return (
+                                    <Link key={rel._id} to={`/design/${rel._id}`} className="group bg-white rounded-3xl p-3 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 flex flex-col h-full cursor-pointer">
+                                        <figure className="relative aspect-[4/3] w-full rounded-[1.5rem] overflow-hidden bg-gray-50 mb-4 shrink-0">
+                                            <img src={rel.previewImages?.[0] || placeholderImg} alt={rel.title} className="w-full h-full object-cover mix-blend-multiply group-hover:scale-105 transition-transform duration-500" />
+                                            {relFmt && <div className={`absolute bottom-3 right-3 px-3 py-1 rounded-full text-xs font-bold shadow-sm border border-white backdrop-blur-md ${formatBadgeStyle[relFmt] || 'bg-white/90 text-gray-800'}`}>{relFmt}</div>}
+                                        </figure>
+                                        <div className="px-2 pb-2 flex flex-col grow justify-between">
+                                            <div>
+                                                <h3 className="text-md font-bold text-gray-900 leading-snug mb-1 line-clamp-1 group-hover:text-blue-600 transition-colors">{rel.title}</h3>
+                                                <p className="text-xs font-medium text-gray-400 truncate mb-3">{rel.uploadedBy?.name || 'Creator'}</p>
+                                            </div>
+                                            <div className="flex items-center justify-between mt-auto">
+                                                <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded-full capitalize">{rel.category || 'CNC'}</span>
+                                                <div className="bg-[#111] text-white px-3 py-1 rounded-full font-bold text-xs shadow-sm group-hover:bg-blue-600 transition-colors">
+                                                    <PriceTag price={rel.price} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
 
             </div>
 

@@ -11,6 +11,10 @@ const orderSchema = new mongoose.Schema({
         ref: 'Design',
         required: true,
     }],
+    bundleId: {
+        type: mongoose.Schema.ObjectId,
+        ref: 'Bundle',
+    },
     amount: {
         type: Number,
         required: true,

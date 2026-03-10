@@ -1,4 +1,5 @@
 const generateSignedUrl = require('../utils/generateSignedUrl');
+const User = require('../models/User.model');
 
 exports.authorizeAndGenerateUrl = async (design, user) => {
     let isAuthorized = false;
@@ -22,6 +23,19 @@ exports.authorizeAndGenerateUrl = async (design, user) => {
 
         if (isOwner || hasPurchased) {
             isAuthorized = true;
+        } else if (user.subscriptionStatus === 'active' && user.downloadsRemaining > 0) {
+            // Subscription users get the design
+            const userDoc = await User.findById(user._id);
+            if (userDoc && userDoc.subscriptionStatus === 'active' && userDoc.downloadsRemaining > 0) {
+                userDoc.downloadsRemaining -= 1;
+                userDoc.purchasedDesigns.push(design._id);
+                await userDoc.save();
+                isAuthorized = true;
+
+                // Update the req.user memory as well so if it's used later it's fresh
+                user.downloadsRemaining = userDoc.downloadsRemaining;
+                user.purchasedDesigns = userDoc.purchasedDesigns;
+            }
         }
     }
 

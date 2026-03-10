@@ -1,6 +1,4 @@
-const { GetObjectCommand } = require('@aws-sdk/client-s3');
-const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
-const s3Client = require('../config/storage');
+const cloudinary = require('../config/cloudinary');
 
 const generateSignedUrl = async (fileKey) => {
     // Handling local files
@@ -10,15 +8,14 @@ const generateSignedUrl = async (fileKey) => {
         return `${baseUrl}/uploads/designs/${fileName}`;
     }
 
-    const command = new GetObjectCommand({
-        Bucket: process.env.R2_BUCKET_NAME,
-        Key: fileKey,
-    });
-
-    const expiry = parseInt(process.env.SIGNED_URL_EXPIRY) || 300; // default 5 minutes (was 60s — too tight for slow connections)
+    const expiry = parseInt(process.env.SIGNED_URL_EXPIRY) || 300; // default 5 minutes
+    const expiresAt = Math.floor(Date.now() / 1000) + expiry;
 
     try {
-        const url = await getSignedUrl(s3Client, command, { expiresIn: expiry });
+        const url = cloudinary.utils.private_download_url(fileKey, 'raw', {
+            expires_at: expiresAt,
+            attachment: true
+        });
         return url;
     } catch (error) {
         console.error("Error generating signed URL", error);

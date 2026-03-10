@@ -41,29 +41,38 @@ const Footer = () => {
                         </div>
                     </div>
 
-                    {/* Info */}
+                    {/* Categories Navigation */}
                     <div>
-                        <h6 className="font-bold text-gray-900 mb-6 uppercase tracking-wider text-sm">Platform Infrastructure</h6>
-                        <div className="flex flex-col gap-4">
-                            <span className="flex items-center gap-3 text-[14px] font-medium text-gray-500">
-                                <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block shadow-sm"></span> Secured with Cloudflare
-                            </span>
-                            <span className="flex items-center gap-3 text-[14px] font-medium text-gray-500">
-                                <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block shadow-sm"></span> Payments via Razorpay
-                            </span>
-                            <span className="flex items-center gap-3 text-[14px] font-medium text-gray-500">
-                                <span className="w-2.5 h-2.5 rounded-full bg-purple-500 inline-block shadow-sm"></span> Images via Cloudinary
-                            </span>
-                            <span className="flex items-center gap-3 text-[14px] font-medium text-gray-500">
-                                <span className="w-2.5 h-2.5 rounded-full bg-orange-500 inline-block shadow-sm"></span> 5-min expiring download links
-                            </span>
+                        <h6 className="font-bold text-gray-900 mb-6 uppercase tracking-wider text-sm">Top Categories</h6>
+                        <div className="flex flex-col gap-3">
+                            <Link to="/category/3d-designs" className="text-gray-500 hover:text-blue-600 font-medium text-[15px] transition-colors">3D Designs</Link>
+                            <Link to="/category/2d-grill-designs" className="text-gray-500 hover:text-blue-600 font-medium text-[15px] transition-colors">2D Grill Designs</Link>
+                            <Link to="/category/3d-doors-design" className="text-gray-500 hover:text-blue-600 font-medium text-[15px] transition-colors">3D Doors</Link>
+                            <Link to="/category/temple-designs" className="text-gray-500 hover:text-blue-600 font-medium text-[15px] transition-colors">Temple Models</Link>
+                            <Link to="/bundles" className="text-gray-500 hover:text-blue-600 font-medium text-[15px] transition-colors">Value Bundles</Link>
+                        </div>
+                    </div>
+
+                    {/* Quick Info */}
+                    <div>
+                        <h6 className="font-bold text-gray-900 mb-6 uppercase tracking-wider text-sm">Company</h6>
+                        <div className="flex flex-col gap-3">
+                            <Link to="/about" className="text-gray-500 hover:text-black font-medium text-[15px] transition-colors">About Us</Link>
+                            <Link to="/contact" className="text-gray-500 hover:text-black font-medium text-[15px] transition-colors">Contact Support</Link>
+                            <Link to="/pricing" className="text-gray-500 hover:text-black font-medium text-[15px] transition-colors">Pricing</Link>
+                            <a href="#" className="text-gray-500 hover:text-black font-medium text-[15px] transition-colors">Privacy Policy</a>
+                            <a href="#" className="text-gray-500 hover:text-black font-medium text-[15px] transition-colors">Terms of Service</a>
                         </div>
                     </div>
                 </div>
 
                 <div className="mt-16 pt-8 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 text-gray-400 font-medium text-sm">
-                    <p>© {new Date().getFullYear()} CNC Market. All rights reserved.</p>
-                    <p>Built with <span className="text-red-500">♥</span> for woodworkers.</p>
+                    <p>© {new Date().getFullYear()} CNC Market. All rights reserved. Premium Marketplace for Router and Laser Cutters.</p>
+                    <div className="flex items-center gap-6">
+                        <a href="#" className="hover:text-black transition-colors">Instagram</a>
+                        <a href="#" className="hover:text-black transition-colors">Facebook</a>
+                        <a href="#" className="hover:text-black transition-colors">WhatsApp</a>
+                    </div>
                 </div>
             </div>
         </footer>

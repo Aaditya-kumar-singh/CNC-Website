@@ -15,6 +15,7 @@ if (fs.existsSync(envFilePath)) {
 const mongoose = require('mongoose');
 const app = require('./app');
 const connectDB = require('./config/db');
+const startCartAbandonmentJob = require('./cron/abandonedCart.job');
 
 // ─── Startup environment validation ─────────────────────────────────────────
 // Fail loudly if critical env vars are missing rather than silently misbehaving
@@ -38,6 +39,9 @@ if (!process.env.FRONTEND_URL) {
 
 // Connect to Database
 connectDB();
+
+// Start Background Jobs
+startCartAbandonmentJob();
 
 const PORT = process.env.PORT || 5000;
 

@@ -36,6 +36,25 @@ exports.getDesign = async (req, res) => {
     }
 };
 
+// Get related designs
+exports.getRelatedDesigns = async (req, res) => {
+    try {
+        const design = await designService.getDesignById(req.params.id);
+        if (!design) {
+            return errorResponse(res, 404, 'No design found with that ID');
+        }
+
+        const related = await designService.getRelatedDesigns(design._id, design.category);
+
+        successResponse(res, 200, {
+            results: related.length,
+            data: { designs: related }
+        });
+    } catch (error) {
+        errorResponse(res, 400, error.message);
+    }
+};
+
 // Create a design (Handled by multer upload preview and uploadCNC middlewares)
 exports.createDesign = async (req, res) => {
     try {

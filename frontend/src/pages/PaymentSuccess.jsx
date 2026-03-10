@@ -1,6 +1,6 @@
 import React, { useEffect, useContext, useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { verifyPayment } from '../services/payment.service';
+import { verifyPayment, verifySubscription } from '../services/payment.service';
 import { AuthContext } from '../context/AuthContext';
 import { CheckCircle2, AlertCircle, ShoppingBag } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -12,6 +12,7 @@ const PaymentSuccess = () => {
 
     const [status, setStatus] = useState('verifying'); // 'verifying', 'success', 'error'
     const sessionId = searchParams.get('session_id');
+    const type = searchParams.get('type');
 
     useEffect(() => {
         const verifyStripePayment = async () => {
@@ -21,8 +22,11 @@ const PaymentSuccess = () => {
             }
 
             try {
-                // Important to use the verify endpoint we've set up
-                await verifyPayment(sessionId);
+                if (type === 'subscription') {
+                    await verifySubscription(sessionId);
+                } else {
+                    await verifyPayment(sessionId);
+                }
 
                 await refreshUser();
                 setStatus('success');
@@ -40,7 +44,7 @@ const PaymentSuccess = () => {
         };
 
         verifyStripePayment();
-    }, [sessionId, navigate, refreshUser]);
+    }, [sessionId, type, navigate, refreshUser]);
 
     return (
         <div className="min-h-[70vh] flex flex-col items-center justify-center p-4">

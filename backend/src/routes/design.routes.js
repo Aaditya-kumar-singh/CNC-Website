@@ -24,4 +24,6 @@ router.route('/:id')
     .put(protect, restrictToAdmin, designController.updateDesign)
     .delete(protect, restrictToAdmin, designController.deleteDesign);
 
+router.get('/:id/related', designController.getRelatedDesigns);
+
 module.exports = router;

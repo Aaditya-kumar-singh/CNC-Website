@@ -1,6 +1,6 @@
 const Design = require('../models/Design.model');
 const cloudinary = require('../config/cloudinary');
-const uploadToR2 = require('../utils/uploadToR2');
+const uploadToCloudinary = require('../utils/uploadToCloudinary');
 
 // Get all active designs with populated user info, optionally filtered by category/search/sort/page
 exports.getAllDesigns = async ({ category, search, sort, page, limit, priceType, fileType } = {}) => {
@@ -29,6 +29,7 @@ exports.getAllDesigns = async ({ category, search, sort, page, limit, priceType,
     let sortOption = '-createdAt'; // Default: newest
     if (sort === 'price_asc') sortOption = 'price';
     else if (sort === 'price_desc') sortOption = '-price';
+    else if (sort === 'popular') sortOption = '-downloads';
 
     // Pagination
     const pageNum = parseInt(page) || 1;
@@ -74,8 +75,8 @@ exports.createDesign = async (designData, previewFile, cncFile, userId) => {
         ]
     });
 
-    // Upload main file to R2
-    const fileKey = await uploadToR2(
+    // Upload main file to Cloudinary
+    const fileKey = await uploadToCloudinary(
         cncFile.buffer,
         cncFile.mimetype,
         cncFile.originalname
@@ -103,4 +104,16 @@ exports.softDeleteDesign = async (design) => {
     design.isActive = false;
     await design.save();
     return design;
+};
+
+// Get related designs by category
+exports.getRelatedDesigns = async (designId, category, limit = 4) => {
+    return await Design.find({
+        category: category,
+        _id: { $ne: designId },
+        isActive: true
+    })
+        .populate('uploadedBy', 'name')
+        .select('+fileKey -__v')
+        .limit(limit);
 };

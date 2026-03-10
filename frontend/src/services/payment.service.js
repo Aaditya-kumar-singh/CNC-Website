@@ -9,3 +9,13 @@ export const verifyPayment = async (session_id) => {
     const response = await api.post('/payments/verify', { session_id });
     return response.data;
 };
+
+export const createSubscription = async (planId) => {
+    const response = await api.post('/payments/subscriptions', { planId });
+    return response.data;
+};
+
+export const verifySubscription = async (session_id) => {
+    const response = await api.post('/payments/verify-subscription', { session_id });
+    return response.data;
+};

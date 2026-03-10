@@ -1,7 +1,7 @@
 import React, { useState, useContext, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { LogOut, Upload, BarChart3, ShoppingBag, Heart, ShoppingCart, Menu, X, Search } from 'lucide-react';
+import { LogOut, Upload, BarChart3, ShoppingBag, Heart, ShoppingCart, Menu, X, Search, ChevronDown } from 'lucide-react';
 
 const Navbar = () => {
     const { user, logout } = useContext(AuthContext);
@@ -10,13 +10,18 @@ const Navbar = () => {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [categoriesOpen, setCategoriesOpen] = useState(false);
     const profileRef = useRef(null);
+    const categoriesRef = useRef(null);
 
     // Fix #3: close profile dropdown on outside click — removes the blocking full-screen overlay div
     useEffect(() => {
         const handleClickOutside = (e) => {
             if (profileRef.current && !profileRef.current.contains(e.target)) {
                 setProfileOpen(false);
+            }
+            if (categoriesRef.current && !categoriesRef.current.contains(e.target)) {
+                setCategoriesOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -41,14 +46,22 @@ const Navbar = () => {
 
     const isHome = location.pathname === '/';
 
-    // Fix #7: using link.path as key instead of array index
-    const navLinks = [
-        { name: 'ROUTERS', path: '/category/routers' },
-        { name: 'SPINDLES', path: '/category/spindles' },
-        { name: 'CARVINGS', path: '/category/carvings' },
-        { name: 'FURNITURE', path: '/category/furniture' },
-        { name: 'RELIEFS', path: '/category/reliefs' },
-        { name: 'V-BITS', path: '/category/v-bits' },
+    const categoryLinks = [
+        { name: '3D Designs', path: '/category/3d-designs' },
+        { name: '3D Doors Design', path: '/category/3d-doors-design' },
+        { name: '2D Grill Designs', path: '/category/2d-grill-designs' },
+        { name: '2D Designs', path: '/category/2d-designs' },
+        { name: '2D Door Designs', path: '/category/2d-door-designs' },
+        { name: 'Temple Designs', path: '/category/temple-designs' },
+        { name: '3D Traditional', path: '/category/3d-traditional' },
+    ];
+
+    const mainNavLinks = [
+        { name: 'HOME', path: '/' },
+        { name: 'BUNDLES', path: '/bundles' },
+        { name: 'PRICING', path: '/pricing' },
+        { name: 'ABOUT US', path: '/about' },
+        { name: 'CONTACT US', path: '/contact' },
     ];
 
     return (
@@ -68,11 +81,37 @@ const Navbar = () => {
 
                     {/* Desktop Category Links & Search */}
                     <div className="hidden lg:flex items-center justify-center flex-1 gap-6 px-4">
-                        {navLinks.map((link) => (
+                        {/* Categories Dropdown */}
+                        <div className="relative" ref={categoriesRef}>
+                            <button
+                                onClick={() => setCategoriesOpen(!categoriesOpen)}
+                                className={`flex items-center gap-1 text-[13px] font-bold tracking-widest transition-colors ${categoriesOpen || location.pathname.includes('/category/') ? 'text-black' : 'text-gray-500 hover:text-black'}`}
+                            >
+                                CATEGORIES <ChevronDown size={14} className={`transition-transform ${categoriesOpen ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {categoriesOpen && (
+                                <div className="absolute top-full left-0 mt-4 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 py-3 z-50 overflow-hidden">
+                                    {categoryLinks.map((link) => (
+                                        <Link
+                                            key={link.path}
+                                            to={link.path}
+                                            onClick={() => setCategoriesOpen(false)}
+                                            className="block px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                        >
+                                            {link.name}
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Main Links */}
+                        {mainNavLinks.map((link) => (
                             <Link
                                 key={link.path}
                                 to={link.path}
-                                className={`text-[12px] font-bold tracking-widest transition-colors ${location.pathname === link.path ? 'text-black' : 'text-gray-500 hover:text-black'}`}
+                                className={`text-[13px] font-bold tracking-widest transition-colors ${location.pathname === link.path ? 'text-black' : 'text-gray-500 hover:text-black'}`}
                             >
                                 {link.name}
                             </Link>
@@ -191,13 +230,26 @@ const Navbar = () => {
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={20} />
                         </form>
 
-                        <p className="text-[11px] font-black tracking-widest text-gray-400 px-3 mb-3">CATEGORIES</p>
-                        {navLinks.map((link) => (
+                        <p className="text-[11px] font-black tracking-widest text-gray-400 px-3 mb-3">MAIN MENU</p>
+                        {mainNavLinks.map((link) => (
                             <Link
                                 key={link.path}
                                 to={link.path}
                                 onClick={() => setMobileOpen(false)}
                                 className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 hover:text-black transition-colors"
+                            >
+                                {link.name}
+                            </Link>
+                        ))}
+
+                        <div className="h-px bg-gray-100 my-3" />
+                        <p className="text-[11px] font-black tracking-widest text-gray-400 px-3 mb-3">CATEGORIES</p>
+                        {categoryLinks.map((link) => (
+                            <Link
+                                key={link.path}
+                                to={link.path}
+                                onClick={() => setMobileOpen(false)}
+                                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-black transition-colors"
                             >
                                 {link.name}
                             </Link>

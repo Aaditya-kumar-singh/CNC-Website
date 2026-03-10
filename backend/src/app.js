@@ -11,6 +11,7 @@ const paymentRouter = require('./routes/payment.routes');
 const downloadRouter = require('./routes/download.routes');
 const adminRouter = require('./routes/admin.routes');
 const reviewRouter = require('./routes/review.routes');
+const bundleRouter = require('./routes/bundle.routes');
 
 const app = express();
 const path = require('path');
@@ -45,6 +46,7 @@ app.use('/api/v1/payments', paymentRouter);
 app.use('/api/v1/downloads', downloadRouter);
 app.use('/api/v1/admin', adminRouter);
 app.use('/api/v1/reviews', reviewRouter);
+app.use('/api/v1/bundles', bundleRouter);
 
 // Handle undefined routes
 app.all('/{*path}', (req, res, next) => {

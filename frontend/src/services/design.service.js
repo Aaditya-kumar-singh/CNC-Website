@@ -30,3 +30,8 @@ export const updateDesign = async (designId, updateData) => {
     const response = await api.put(`/designs/${designId}`, updateData);
     return response.data;
 };
+
+export const getRelatedDesigns = async (designId) => {
+    const response = await api.get(`/designs/${designId}/related`);
+    return response.data;
+};

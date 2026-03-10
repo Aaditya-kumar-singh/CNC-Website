@@ -1,20 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { getAllDesigns } from '../services/design.service';
+import { toggleWishlist } from '../services/auth.service';
+import { AuthContext } from '../context/AuthContext';
 import PriceTag from '../components/PriceTag';
-import { Search, PackageOpen, Star, ChevronDown, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Search, PackageOpen, Star, ChevronDown, ChevronLeft, ChevronRight, X, Heart } from 'lucide-react';
 import toast from 'react-hot-toast';
 import heroImg from '../assets/wood_cnc_hero.png';
-import placeholderImg from '../assets/wood_part_placeholder.png';
-
-// File format from fileKey extension
-const getFileFormat = (design) => {
-    if (!design.fileKey) return 'DXF';
-    const ext = design.fileKey.split('.').pop().toUpperCase();
-    return ['STL', 'DXF', 'SVG'].includes(ext) ? ext : 'DXF';
-};
-
-const formatBadgeColor = { STL: 'bg-purple-100 text-purple-700', DXF: 'bg-blue-100 text-blue-700', SVG: 'bg-green-100 text-green-700' };
+import DesignCard from '../components/DesignCard';
 
 // Skeleton card
 const SkeletonCard = () => (
@@ -37,9 +30,14 @@ const SORT_OPTIONS = [
 
 const Home = () => {
     const [searchParams, setSearchParams] = useSearchParams();
+    const { user, refreshUser } = React.useContext(AuthContext);
 
     const [designs, setDesigns] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [topSelling, setTopSelling] = useState([]);
+    const [latest3D, setLatest3D] = useState([]);
+    const [latest2D, setLatest2D] = useState([]);
+    const [togglingWishlist, setTogglingWishlist] = useState(null);
     const [search, setSearch] = useState(searchParams.get('search') || '');
     const [sort, setSort] = useState('newest');
     const [priceType, setPriceType] = useState('all');
@@ -92,7 +90,26 @@ const Home = () => {
         }
     }, []);
 
-    // Re-fetch when dependencies change
+    // Initial load for featured sections
+    useEffect(() => {
+        const fetchFeatures = async () => {
+            try {
+                const [topRes, d3Res, d2Res] = await Promise.all([
+                    getAllDesigns('?sort=popular&limit=4'),
+                    getAllDesigns('?category=3d-designs&limit=4'),
+                    getAllDesigns('?category=2d-designs&limit=4')
+                ]);
+                setTopSelling(topRes?.data?.designs || []);
+                setLatest3D(d3Res?.data?.designs || []);
+                setLatest2D(d2Res?.data?.designs || []);
+            } catch (e) {
+                console.error('Failed to feature sections', e);
+            }
+        };
+        fetchFeatures();
+    }, []);
+
+    // Re-fetch main grid when dependencies change
     useEffect(() => {
         fetchDesigns(search, sort, page, priceType, fileType);
     }, [sort, page, priceType, fileType, searchParams.get('search'), fetchDesigns]);
@@ -120,6 +137,25 @@ const Home = () => {
         setSort(value);
         setSortOpen(false);
         setPage(1);
+    };
+
+    const handleToggleWishlist = async (e, id) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!user) {
+            toast.error('Please login to save designs');
+            return;
+        }
+        try {
+            setTogglingWishlist(id);
+            const res = await toggleWishlist(id);
+            toast.success(res.data.isAdded ? 'Added to wishlist' : 'Removed from wishlist');
+            await refreshUser();
+        } catch (error) {
+            toast.error('Failed to update wishlist');
+        } finally {
+            setTogglingWishlist(null);
+        }
     };
 
     return (
@@ -168,7 +204,7 @@ const Home = () => {
                 </div>
 
                 {/* Search & Sort Bar */}
-                <div className="bg-white/80 backdrop-blur-xl p-2 rounded-[2rem] shadow-sm border border-white flex flex-col sm:flex-row items-center gap-2 mb-12 max-w-4xl mx-auto sticky top-24 z-30">
+                <div className="bg-white/80 backdrop-blur-xl p-2 rounded-[2rem] shadow-sm border border-white flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-12 max-w-4xl mx-auto lg:sticky top-24 z-30">
                     <div className="flex-1 flex items-center bg-gray-50/50 rounded-full px-4 py-3 sm:py-2 w-full">
                         <Search className="text-gray-400 mr-3 shrink-0" size={20} />
                         <input
@@ -185,7 +221,7 @@ const Home = () => {
                         )}
                     </div>
 
-                    <div className="flex items-center gap-2 w-full sm:w-auto px-2 sm:px-0">
+                    <div className="flex items-center justify-between sm:justify-start gap-2 w-full sm:w-auto px-2 sm:px-0">
                         <div className="h-8 w-[1px] bg-gray-200 hidden sm:block mx-2"></div>
 
                         {/* Filters Dropdown */}
@@ -257,132 +293,173 @@ const Home = () => {
                     </div>
                 </div>
 
-                {/* Results count */}
-                {!loading && (
-                    <p className="text-sm font-medium text-gray-400 mb-6">
-                        Showing <span className="font-bold text-gray-700">{designs.length}</span> of <span className="font-bold text-gray-700">{total}</span> designs
-                        {search && <span> for "<span className="text-blue-600">{search}</span>"</span>}
-                    </p>
-                )}
+                {/* Main Content Area */}
+                <div className="flex flex-col lg:flex-row gap-8 items-start">
 
-                {/* Design Grid */}
-                {loading ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 xl:gap-8">
-                        {[...Array(8)].map((_, i) => <SkeletonCard key={i} />)}
+                    {/* Left Sidebar Filters */}
+                    <div className="hidden lg:block w-[280px] shrink-0 bg-white p-6 rounded-3xl shadow-sm border border-gray-100 sticky top-28">
+                        <h2 className="text-xl font-black text-gray-900 mb-6">Categories</h2>
+                        <ul className="space-y-3 font-medium text-gray-600 text-sm">
+                            <li><Link to="/" className="flex justify-between items-center text-blue-600 font-bold bg-blue-50 px-3 py-2 rounded-xl"><span>Show All Categories</span></Link></li>
+                            <li><Link to="/category/2d-designs" className="flex justify-between items-center hover:text-black px-3 py-2 rounded-xl hover:bg-gray-50"><span>2D Designs</span></Link></li>
+                            <li><Link to="/category/2d-grill-designs" className="flex justify-between items-center hover:text-black px-3 py-2 rounded-xl hover:bg-gray-50"><span>2D Grill Designs</span></Link></li>
+                            <li><Link to="/category/3d-designs" className="flex justify-between items-center hover:text-black px-3 py-2 rounded-xl hover:bg-gray-50"><span>3D Designs</span></Link></li>
+                            <li><Link to="/category/3d-traditional" className="flex justify-between items-center hover:text-black px-3 py-2 rounded-xl hover:bg-gray-50"><span>3D Traditional Designs</span></Link></li>
+                            <li><Link to="/category/temple-designs" className="flex justify-between items-center hover:text-black px-3 py-2 rounded-xl hover:bg-gray-50"><span>Temple Designs</span></Link></li>
+                            <li><Link to="/category/other" className="flex justify-between items-center hover:text-black px-3 py-2 rounded-xl hover:bg-gray-50"><span>Uncategorized</span></Link></li>
+
+                            <li className="pt-2">
+                                <Link to="/category/3d-doors-design" className="flex justify-between items-center hover:text-black px-3 py-2 rounded-xl hover:bg-gray-50"><span>3D Doors Design</span></Link>
+                                <ul className="pl-6 mt-2 space-y-2 border-l-2 border-gray-100 ml-4">
+                                    <li><Link to="/category/3d-modern-panel-doors" className="flex justify-between items-center hover:text-black px-2 py-1.5 rounded-lg hover:bg-gray-50"><span>3D Modern Panel Doors</span></Link></li>
+                                    <li><Link to="/category/3d-latest-panel-door" className="flex justify-between items-center hover:text-black px-2 py-1.5 rounded-lg hover:bg-gray-50"><span>3D Latest Panel Door</span></Link></li>
+                                    <li><Link to="/category/3d-borderless-mdf-door" className="flex justify-between items-center hover:text-black px-2 py-1.5 rounded-lg hover:bg-gray-50"><span>3D Borderless-MDF Door</span></Link></li>
+                                    <li><Link to="/category/3d-traditional-panel-door" className="flex justify-between items-center hover:text-black px-2 py-1.5 rounded-lg hover:bg-gray-50"><span>3D Traditional Panel Door</span></Link></li>
+                                    <li><Link to="/category/3d-unique-door" className="flex justify-between items-center hover:text-black px-2 py-1.5 rounded-lg hover:bg-gray-50"><span>3D Unique Door</span></Link></li>
+                                </ul>
+                            </li>
+                        </ul>
                     </div>
-                ) : designs.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-24 bg-white rounded-3xl shadow-sm border border-gray-100 min-h-[400px]">
-                        <PackageOpen size={64} className="mb-4 text-gray-300" />
-                        <p className="text-xl font-bold text-gray-800">
-                            {search ? `No results for "${search}"` : 'No designs available yet'}
-                        </p>
-                        <p className="text-base mt-2 text-gray-500 font-medium">
-                            {search ? 'Try a different search term' : 'Check back soon!'}
-                        </p>
-                        {search && (
-                            <button onClick={() => handleSearch('')} className="mt-6 px-6 py-2.5 bg-[#111] text-white rounded-full font-bold text-sm hover:bg-black transition-colors">
-                                Clear Search
-                            </button>
-                        )}
-                    </div>
-                ) : (
-                    <>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 xl:gap-8">
-                            {designs.map((design) => {
-                                const fmt = getFileFormat(design);
-                                return (
-                                    <Link key={design._id} to={`/design/${design._id}`} className="group bg-white rounded-[2rem] p-3 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 flex flex-col h-full cursor-pointer">
-                                        <figure className="relative aspect-[4/3] w-full rounded-[1.5rem] overflow-hidden bg-gray-50 mb-4 shrink-0">
-                                            <img
-                                                src={design.previewImages?.[0] || placeholderImg}
-                                                alt={design.title}
-                                                className="w-full h-full object-cover mix-blend-multiply group-hover:scale-105 transition-transform duration-500"
-                                                draggable="false"
-                                                onError={(e) => { e.target.src = placeholderImg; }}
-                                            />
-                                            {/* Correct format badge from fileKey extension */}
-                                            <div className={`absolute bottom-3 right-3 px-3 py-1 rounded-full text-xs font-bold shadow-sm border border-white backdrop-blur-md ${formatBadgeColor[fmt] || 'bg-white/90 text-gray-800'}`}>
-                                                {fmt}
-                                            </div>
-                                        </figure>
 
-                                        <div className="px-2 pb-2 flex flex-col grow justify-between">
-                                            <div>
-                                                <h2 className="text-lg font-bold text-gray-900 leading-snug mb-1 line-clamp-1 group-hover:text-blue-600 transition-colors">
-                                                    {design.title}
-                                                </h2>
-                                                <p className="text-sm font-medium text-gray-400 truncate mb-3">
-                                                    {design.uploadedBy?.name || 'Unknown Creator'}
-                                                </p>
-                                            </div>
-
-                                            <div className="flex items-center justify-between mt-auto">
-                                                {/* Fix #8: avgRating not computed per-design in listing — show price badge only */}
-                                                <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded-full capitalize">
-                                                    {design.category || 'CNC'}
-                                                </span>
-
-                                                <div className="bg-[#111] text-white px-4 py-1.5 rounded-full font-bold text-sm shadow-sm group-hover:bg-blue-600 transition-colors flex items-center gap-1">
-                                                    <PriceTag price={design.price} />
-                                                </div>
-                                            </div>
+                    {/* Right Side Grid */}
+                    <div className="flex-1 w-full flex flex-col gap-10">
+                        {/* Featured Sections (Only show if not filtering/searching) */}
+                        {!loading && !search && page === 1 && sort === 'newest' && priceType === 'all' && fileType === 'all' && (
+                            <>
+                                {topSelling.length > 0 && (
+                                    <div>
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h2 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+                                                <Star className="text-yellow-400 fill-yellow-400" size={24} /> Top Selling Designs
+                                            </h2>
                                         </div>
-                                    </Link>
-                                );
-                            })}
-                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                            {topSelling.map(design => <DesignCard key={design._id} design={design} user={user} onToggleWishlist={handleToggleWishlist} togglingWishlist={togglingWishlist} />)}
+                                        </div>
+                                    </div>
+                                )}
 
-                        {/* Fix #4: Smart paginator with ellipsis — avoids rendering 50+ buttons */}
-                        {totalPages > 1 && (() => {
-                            const buildPages = () => {
-                                const pages = [];
-                                const delta = 1; // pages around current
-                                for (let i = 1; i <= totalPages; i++) {
-                                    if (i === 1 || i === totalPages || (i >= page - delta && i <= page + delta)) {
-                                        pages.push(i);
-                                    } else if (pages[pages.length - 1] !== '...') {
-                                        pages.push('...');
-                                    }
-                                }
-                                return pages;
-                            };
-                            return (
-                                <div className="flex items-center justify-center gap-2 mt-16">
-                                    <button
-                                        disabled={page === 1}
-                                        onClick={() => setPage(p => p - 1)}
-                                        className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                                    >
-                                        <ChevronLeft size={18} />
-                                    </button>
+                                {latest3D.length > 0 && (
+                                    <div>
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h2 className="text-2xl font-black text-gray-900 tracking-tight">Latest 3D Designs</h2>
+                                            <Link to="/category/3d-designs" className="text-blue-600 font-bold text-sm hover:underline">View All</Link>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                            {latest3D.map(design => <DesignCard key={design._id} design={design} user={user} onToggleWishlist={handleToggleWishlist} togglingWishlist={togglingWishlist} />)}
+                                        </div>
+                                    </div>
+                                )}
 
-                                    {buildPages().map((p, i) =>
-                                        p === '...' ? (
-                                            <span key={`ellipsis-${i}`} className="w-10 text-center text-gray-400 font-bold">…</span>
-                                        ) : (
-                                            <button
-                                                key={p}
-                                                onClick={() => setPage(p)}
-                                                className={`w-10 h-10 rounded-full text-sm font-bold transition-all ${page === p ? 'bg-[#111] text-white shadow-md scale-110' : 'border border-gray-200 text-gray-600 hover:bg-gray-100'
-                                                    }`}
-                                            >
-                                                {p}
-                                            </button>
-                                        )
-                                    )}
+                                {latest2D.length > 0 && (
+                                    <div>
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h2 className="text-2xl font-black text-gray-900 tracking-tight">Latest 2D Designs</h2>
+                                            <Link to="/category/2d-designs" className="text-blue-600 font-bold text-sm hover:underline">View All</Link>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                            {latest2D.map(design => <DesignCard key={design._id} design={design} user={user} onToggleWishlist={handleToggleWishlist} togglingWishlist={togglingWishlist} />)}
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        )}
 
-                                    <button
-                                        disabled={page === totalPages}
-                                        onClick={() => setPage(p => p + 1)}
-                                        className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                                    >
-                                        <ChevronRight size={18} />
-                                    </button>
+                        <div>
+                            {/* Results count */}
+                            {!loading && (
+                                <div className="flex items-center justify-between mb-6">
+                                    <h2 className="text-2xl font-black text-gray-900 tracking-tight">
+                                        {!search && page === 1 && sort === 'newest' && priceType === 'all' && fileType === 'all' ? 'All Designs' : 'Search Results'}
+                                    </h2>
+                                    <p className="text-sm font-medium text-gray-400">
+                                        Showing <span className="font-bold text-gray-700">{designs.length}</span> of <span className="font-bold text-gray-700">{total}</span> designs
+                                        {search && <span> for "<span className="text-blue-600">{search}</span>"</span>}
+                                    </p>
                                 </div>
-                            );
-                        })()}
-                    </>
-                )}
+                            )}
+
+                            {/* Design Grid */}
+                            {loading ? (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 xl:gap-8">
+                                    {[...Array(8)].map((_, i) => <SkeletonCard key={i} />)}
+                                </div>
+                            ) : designs.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-24 bg-white rounded-3xl shadow-sm border border-gray-100 min-h-[400px]">
+                                    <PackageOpen size={64} className="mb-4 text-gray-300" />
+                                    <p className="text-xl font-bold text-gray-800">
+                                        {search ? `No results for "${search}"` : 'No designs available yet'}
+                                    </p>
+                                    <p className="text-base mt-2 text-gray-500 font-medium">
+                                        {search ? 'Try a different search term' : 'Check back soon!'}
+                                    </p>
+                                    {search && (
+                                        <button onClick={() => handleSearch('')} className="mt-6 px-6 py-2.5 bg-[#111] text-white rounded-full font-bold text-sm hover:bg-black transition-colors">
+                                            Clear Search
+                                        </button>
+                                    )}
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 xl:gap-8">
+                                        {designs.map(design => <DesignCard key={design._id} design={design} user={user} onToggleWishlist={handleToggleWishlist} togglingWishlist={togglingWishlist} />)}
+                                    </div>
+
+                                    {/* Fix #4: Smart paginator with ellipsis — avoids rendering 50+ buttons */}
+                                    {totalPages > 1 && (() => {
+                                        const buildPages = () => {
+                                            const pages = [];
+                                            const delta = 1; // pages around current
+                                            for (let i = 1; i <= totalPages; i++) {
+                                                if (i === 1 || i === totalPages || (i >= page - delta && i <= page + delta)) {
+                                                    pages.push(i);
+                                                } else if (pages[pages.length - 1] !== '...') {
+                                                    pages.push('...');
+                                                }
+                                            }
+                                            return pages;
+                                        };
+                                        return (
+                                            <div className="flex items-center justify-center gap-2 mt-16">
+                                                <button
+                                                    disabled={page === 1}
+                                                    onClick={() => setPage(p => p - 1)}
+                                                    className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                                >
+                                                    <ChevronLeft size={18} />
+                                                </button>
+
+                                                {buildPages().map((p, i) =>
+                                                    p === '...' ? (
+                                                        <span key={`ellipsis-${i}`} className="w-10 text-center text-gray-400 font-bold">…</span>
+                                                    ) : (
+                                                        <button
+                                                            key={p}
+                                                            onClick={() => setPage(p)}
+                                                            className={`w-10 h-10 rounded-full text-sm font-bold transition-all ${page === p ? 'bg-[#111] text-white shadow-md scale-110' : 'border border-gray-200 text-gray-600 hover:bg-gray-100'
+                                                                }`}
+                                                        >
+                                                            {p}
+                                                        </button>
+                                                    )
+                                                )}
+
+                                                <button
+                                                    disabled={page === totalPages}
+                                                    onClick={() => setPage(p => p + 1)}
+                                                    className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                                >
+                                                    <ChevronRight size={18} />
+                                                </button>
+                                            </div>
+                                        );
+                                    })()}
+                                </>
+                            )}
+                        </div>
+                        {/* End of Right Content Div */}
+                    </div>
+                </div>
             </div>
         </div>
     );
