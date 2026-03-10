@@ -6,6 +6,7 @@ const limiter = rateLimit({
     max: 100,
     standardHeaders: true,
     legacyHeaders: false,
+    validate: { trustProxy: false },
     handler: (req, res) => {
         res.status(429).json({ error: 'Too many requests from this IP, please try again in 15 minutes.' });
     },
@@ -18,6 +19,7 @@ const authLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     skipSuccessfulRequests: true, // only count failed attempts
+    validate: { trustProxy: false },
     handler: (req, res) => {
         res.status(429).json({ error: 'Too many login attempts. Please wait 15 minutes before trying again.' });
     },
@@ -29,6 +31,7 @@ const forgotPasswordLimiter = rateLimit({
     max: 5,
     standardHeaders: true,
     legacyHeaders: false,
+    validate: { trustProxy: false },
     handler: (req, res) => {
         res.status(429).json({ error: 'Too many password reset requests. Please wait an hour before trying again.' });
     },
@@ -38,6 +41,7 @@ const forgotPasswordLimiter = rateLimit({
 const downloadLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     max: 20,
+    validate: { trustProxy: false },
     handler: (req, res) => {
         res.status(429).json({ error: 'Download limit exceeded. You can download up to 20 files per hour.' });
     },
@@ -49,6 +53,7 @@ const paymentLimiter = rateLimit({
     max: 20,
     standardHeaders: true,
     legacyHeaders: false,
+    validate: { trustProxy: false },
     handler: (req, res) => {
         res.status(429).json({ error: 'Too many payment attempts. Please try again in an hour.' });
     },
@@ -58,6 +63,7 @@ const paymentLimiter = rateLimit({
 const uploadLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     max: 10,
+    validate: { trustProxy: false },
     handler: (req, res) => {
         res.status(429).json({ error: 'Upload limit exceeded. You can upload up to 10 files per hour.' });
     },
@@ -67,6 +73,7 @@ const uploadLimiter = rateLimit({
 const reviewLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     max: 5,
+    validate: { trustProxy: false },
     handler: (req, res) => {
         res.status(429).json({ error: 'Too many reviews submitted. Please try again later.' });
     },

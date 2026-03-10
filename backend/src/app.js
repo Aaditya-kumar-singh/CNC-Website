@@ -20,6 +20,9 @@ const bundleRouter = require('./routes/bundle.routes');
 
 const app = express();
 
+// Trust reverse proxy (Vercel/Render) so rate limiters get correct IP
+app.set('trust proxy', 1);
+
 // ─── 0. Static uploads (local dev fallback) ──────────────────────────────────
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
