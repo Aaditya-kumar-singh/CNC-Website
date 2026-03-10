@@ -9,6 +9,7 @@ import PriceTag from '../components/PriceTag';
 import { Download, ShieldCheck, Clock, DownloadCloud, Trash2, CheckCircle2, Star, Share2, Heart, MessageSquare, ShoppingCart, Edit3, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import NotFound from './NotFound';
+import SEO from '../components/SEO';
 import placeholderImg from '../assets/wood_part_placeholder.png';
 
 // Derive format label from fileKey extension
@@ -268,6 +269,12 @@ const DesignDetails = () => {
 
     return (
         <div className="min-h-screen bg-[#f8f9fc] pt-8 pb-24 font-sans selection:bg-black selection:text-white">
+            <SEO
+                title={design.title}
+                description={design.description}
+                image={design.previewImages?.[0] || 'https://cnc-designs.com/og-image.jpg'}
+                type="article"
+            />
             <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12">
 
                 {/* Breadcrumbs — Fix #13: use proper Link elements */}

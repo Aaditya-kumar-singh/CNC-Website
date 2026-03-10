@@ -8,6 +8,7 @@ import { Search, PackageOpen, Star, ChevronDown, ChevronLeft, ChevronRight, X, H
 import toast from 'react-hot-toast';
 import heroImg from '../assets/wood_cnc_hero.png';
 import DesignCard from '../components/DesignCard';
+import SEO from '../components/SEO';
 
 // Skeleton card
 const SkeletonCard = () => (
@@ -164,6 +165,10 @@ const Home = () => {
 
     return (
         <div className="min-h-screen bg-[#f8f9fc] pb-24 font-sans selection:bg-black selection:text-white">
+            <SEO
+                title="Premium CNC Router & 3D Carving Files"
+                description="Explore thousands of high-quality STL, DXF, and SVG files for Woodworkers, CNC routers, and laser engravers. Download free and premium digital cutting files today."
+            />
 
             {/* Soft background glow */}
             <div className="absolute top-0 left-0 w-full h-[600px] overflow-hidden -z-10 pointer-events-none hidden lg:block">

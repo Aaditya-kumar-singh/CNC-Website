@@ -24,11 +24,13 @@ import PaymentSuccess from './pages/PaymentSuccess';
 import Pricing from './pages/Pricing';
 import Bundles from './pages/Bundles';
 import BundleDetails from './pages/BundleDetails';
+import SEO from './components/SEO';
 
 function App() {
   return (
     <Router>
       <AuthProvider>
+        <SEO />
         <div className="flex flex-col min-h-screen bg-[#f8f9fc] text-gray-900 font-sans selection:bg-black selection:text-white">
           <Navbar />
           <main className="flex-grow w-full">
