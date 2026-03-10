@@ -205,7 +205,7 @@ exports.verifyAndFulfillSubscription = async (sessionId, userId) => {
 
         if (session.payment_status === 'paid') {
             // ✅ SECURITY: Ensure the session belongs to the user claiming it!
-            // Without this, anyone could submit a known valid session ID and steal the subscripton features.
+            // Without this, anyone could submit a known valid session ID and steal the subscription features.
             if (session.client_reference_id !== userId.toString() && session.metadata?.userId !== userId.toString()) {
                 throw new Error('Unauthorized: This subscription does not belong to you.');
             }
@@ -238,7 +238,14 @@ exports.verifyAndFulfillSubscription = async (sessionId, userId) => {
         }
         return false;
     } catch (error) {
+        // BUG FIX #6: Unauthorized errors were being silently swallowed here.
+        // verifyAndFulfillPayment correctly re-throws them (line 159) but
+        // verifyAndFulfillSubscription did not. A stolen session_id would return
+        // false (no subscription granted) but no 401 would be sent to the client.
+        // Fix: re-throw authorization errors so the controller can return 403.
+        if (error.message && error.message.startsWith('Unauthorized')) throw error;
         console.error('Subscription verification error:', error);
         return false;
     }
 };
+

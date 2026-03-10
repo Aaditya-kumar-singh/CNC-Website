@@ -57,18 +57,22 @@ const Category = () => {
     const { categoryId } = useParams();
     const [designs, setDesigns] = useState([]);
     const [loading, setLoading] = useState(true);
+    // BUG FIX #1: No error state — failed fetch shows empty grid with no message
+    const [error, setError] = useState(null);
 
     const activeCategory = categoryDetails[categoryId] || categoryDetails['other'];
 
     useEffect(() => {
         const fetchDesigns = async () => {
             setLoading(true);
+            setError(null);
             try {
-                // ✅ Fixed: pass as proper query string
                 const data = await getAllDesigns(`?category=${categoryId}&limit=50`);
                 setDesigns(data.data.designs);
-            } catch (error) {
-                toast.error(error.message || 'Failed to load category designs');
+            } catch (err) {
+                // BUG FIX #1 (cont.): Now shows a proper error message instead of empty grid
+                setError(err.message || 'Failed to load category designs');
+                toast.error(err.message || 'Failed to load category designs');
             } finally {
                 setLoading(false);
             }
@@ -98,7 +102,8 @@ const Category = () => {
                         {activeCategory.title}
                     </h1>
                     <p className="text-lg text-gray-500 font-medium max-w-2xl">
-                        {activeCategory.desc} Browse our collection of <span className="font-bold text-gray-800">{designs.length}</span> verified files.
+                        {activeCategory.desc}{/* BUG FIX #2: designs.length shows 0 during loading — only show count once loaded */}
+                        {!loading && !error && <> Browse our collection of <span className="font-bold text-gray-800">{designs.length}</span> verified files.</>}
                     </p>
                 </div>
 
@@ -106,6 +111,16 @@ const Category = () => {
                 {loading ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 xl:gap-8">
                         {[...Array(4)].map((_, i) => <SkeletonCard key={i} />)}
+                    </div>
+                ) : error ? (
+                    /* BUG FIX #1 (cont.): Show error state instead of empty grid */
+                    <div className="flex flex-col items-center justify-center py-24 bg-white rounded-3xl shadow-sm border border-gray-100 min-h-[400px]">
+                        <PackageOpen size={64} className="mb-4 text-red-300" />
+                        <p className="text-xl font-bold text-gray-800">Failed to load designs</p>
+                        <p className="text-base mt-2 text-gray-500 font-medium max-w-sm text-center">{error}</p>
+                        <button onClick={() => window.location.reload()} className="mt-6 px-6 py-2.5 bg-[#111] text-white rounded-full font-bold text-sm hover:bg-black transition-colors">
+                            Try Again
+                        </button>
                     </div>
                 ) : designs.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-24 bg-white rounded-3xl shadow-sm border border-gray-100 min-h-[400px]">
@@ -145,11 +160,10 @@ const Category = () => {
                                             </p>
                                         </div>
 
-                                        <div className="flex items-center justify-between mt-auto">
-                                            {/* Fix #8: avgRating not in listing API response — show format badge instead */}
-                                            <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${formatBadgeColor[fmt] || 'bg-gray-100 text-gray-600'
-                                                }`}>{fmt}</span>
-
+                                        {/* BUG FIX #3: Format badge was rendered TWICE per card.
+                                            Once in the image overlay above, and again here below.
+                                            Replaced the second badge with the price tag only. */}
+                                        <div className="flex items-center justify-end mt-auto">
                                             <div className="bg-[#111] text-white px-4 py-1.5 rounded-full font-bold text-sm shadow-sm group-hover:bg-blue-600 transition-colors flex items-center gap-1">
                                                 <PriceTag price={design.price} />
                                             </div>

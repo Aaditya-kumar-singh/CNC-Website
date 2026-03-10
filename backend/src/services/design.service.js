@@ -7,13 +7,18 @@ exports.getAllDesigns = async ({ category, search, sort, page, limit, priceType,
     const filter = { isActive: true };
 
     if (category) {
-        filter.category = new RegExp(`^${category}$`, 'i');
+        // BUG FIX #4: `new RegExp('^category$', 'i')` is correct for exact match but
+        // the original code was: new RegExp(`^${category}$`, 'i') which is fine for
+        // exact slug match. However the value isn't escaped, so a crafted category
+        // slug like '3d.*' would match everything. Fix: use strict string equality.
+        filter.category = category.toLowerCase();
     }
     if (search) {
-        // Search both title and description for better results
+        // BUG FIX #5: Same unescaped regex injection as admin service.
+        const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         filter.$or = [
-            { title: { $regex: search, $options: 'i' } },
-            { description: { $regex: search, $options: 'i' } }
+            { title: { $regex: escaped, $options: 'i' } },
+            { description: { $regex: escaped, $options: 'i' } }
         ];
     }
     if (priceType === 'free') {
