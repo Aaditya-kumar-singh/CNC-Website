@@ -5,6 +5,7 @@ import PriceTag from '../components/PriceTag';
 import { PackageOpen, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import placeholderImg from '../assets/wood_part_placeholder.png';
+import SEO from '../components/SEO';
 
 const SkeletonCard = () => (
     <div className="animate-pulse bg-white rounded-3xl p-3 flex flex-col h-full shadow-sm border border-gray-100">
@@ -66,6 +67,10 @@ const Category = () => {
 
     return (
         <div className="min-h-screen bg-[#f8f9fc] pb-24 font-sans selection:bg-black selection:text-white">
+            <SEO
+                title={`${activeCategory.title} CNC Designs`}
+                description={activeCategory.desc}
+            />
             <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-12 lg:pt-16">
 
                 <Link to="/" className="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-[#111] transition-colors mb-8">
