@@ -162,7 +162,7 @@ const Home = () => {
         <div className="min-h-screen bg-[#f8f9fc] pb-24 font-sans selection:bg-black selection:text-white">
 
             {/* Soft background glow */}
-            <div className="absolute top-0 left-0 w-full h-[600px] overflow-hidden -z-10 pointer-events-none">
+            <div className="absolute top-0 left-0 w-full h-[600px] overflow-hidden -z-10 pointer-events-none hidden lg:block">
                 <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[80%] rounded-full bg-gradient-to-tr from-orange-100/40 via-yellow-50/40 to-transparent blur-3xl mix-blend-multiply"></div>
                 <div className="absolute top-[10%] -right-[10%] w-[40%] h-[70%] rounded-full bg-gradient-to-bl from-blue-100/40 via-purple-50/40 to-transparent blur-3xl mix-blend-multiply"></div>
             </div>
