@@ -82,10 +82,13 @@ exports.getAllUsers = async ({ page = 1, limit = 20, search = '', role = '', sub
     const query = {};
 
     // Text search on name or email
+    // BUG FIX: Escape regex special chars — unescaped user input like "a.b" or "a*"
+    // would be interpreted as a regex pattern and return wrong/unexpected results.
     if (search) {
+        const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         query.$or = [
-            { name: { $regex: search, $options: 'i' } },
-            { email: { $regex: search, $options: 'i' } }
+            { name: { $regex: escaped, $options: 'i' } },
+            { email: { $regex: escaped, $options: 'i' } }
         ];
     }
 
@@ -112,23 +115,38 @@ exports.getAllUsers = async ({ page = 1, limit = 20, search = '', role = '', sub
         }
     }
 
-    // Sort mapping
-    const sortMap = {
+    // BUG FIX: Sorting by 'purchases' using { purchasedDesigns: -1 } sorts by
+    // the array field value (ObjectId) NOT by the array length. This gives
+    // completely random ordering. Must use aggregation with $size to sort by count.
+    const needsPurchaseSort = sortBy === 'purchases';
+    const sort = needsPurchaseSort ? null : ({
         newest: { createdAt: -1 },
         oldest: { createdAt: 1 },
-        purchases: { purchasedDesigns: -1 },
         name_asc: { name: 1 },
         name_desc: { name: -1 },
-    };
-    const sort = sortMap[sortBy] || sortMap.newest;
+    }[sortBy] || { createdAt: -1 });
 
-    const [users, total] = await Promise.all([
-        User.find(query)
+    let usersQuery;
+    if (needsPurchaseSort) {
+        usersQuery = User.aggregate([
+            { $match: query },
+            { $addFields: { purchaseCount: { $size: { $ifNull: ['$purchasedDesigns', []] } } } },
+            { $sort: { purchaseCount: -1 } },
+            { $skip: (page - 1) * limit },
+            { $limit: limit },
+            { $project: { name: 1, email: 1, role: 1, createdAt: 1, purchasedDesigns: 1, subscriptionStatus: 1, downloadsRemaining: 1 } }
+        ]);
+    } else {
+        usersQuery = User.find(query)
             .select('name email role createdAt purchasedDesigns subscriptionStatus downloadsRemaining')
             .sort(sort)
             .skip((page - 1) * limit)
             .limit(limit)
-            .lean(),
+            .lean();
+    }
+
+    const [users, total] = await Promise.all([
+        usersQuery,
         User.countDocuments(query)
     ]);
 

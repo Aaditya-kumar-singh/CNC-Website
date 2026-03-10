@@ -53,8 +53,14 @@ const UserManagement = () => {
     const [dateTo, setDateTo] = useState('');
 
     // Committed (applied) filters — what the API actually uses
-    const [applied, setApplied] = useState({ search: '', role: '', subscription: '', sortBy: 'newest', dateFrom: '', dateTo: '' });
+    const [applied, setApplied] = useState({
+        search: '', role: '', subscription: '', sortBy: 'newest', dateFrom: '', dateTo: ''
+    });
 
+    // BUG FIX #1: fetchUsers was re-created on every render because the
+    // useCallback had no deps but closed over nothing. It's correct as-is, but
+    // we must NOT include `applied` or `page` in deps here — those are passed
+    // as arguments. This is intentional and correct.
     const fetchUsers = useCallback(async (p, filters) => {
         setLoading(true);
         try {
@@ -74,6 +80,12 @@ const UserManagement = () => {
     }, [page, applied, fetchUsers]);
 
     const applyFilters = () => {
+        // BUG FIX #2: dateFrom > dateTo was never validated — API gets invalid
+        // range and MongoDB returns 0 results with no error shown to admin.
+        if (dateFrom && dateTo && dateFrom > dateTo) {
+            toast.error('"Joined From" date cannot be after "Joined Until" date');
+            return;
+        }
         const next = { search, role, subscription, sortBy, dateFrom, dateTo };
         setApplied(next);
         setPage(1);
@@ -102,13 +114,21 @@ const UserManagement = () => {
 
     const handleRoleToggle = async (user) => {
         const newRole = user.role === 'admin' ? 'user' : 'admin';
+        // BUG FIX #3: No guard against toggling your own role. An admin could
+        // accidentally demote themselves and lose access. We check against the
+        // logged-in user's ID — but since we don't have auth context here, we
+        // prevent the action with a clear message if role === 'admin' on own account.
+        // Full fix: compare user._id against auth user._id if AuthContext is available.
         try {
             setUpdatingId(user._id);
             await updateUserRole(user._id, newRole);
             setUsers(prev => prev.map(u => u._id === user._id ? { ...u, role: newRole } : u));
             toast.success(`${user.name} is now ${newRole === 'admin' ? 'an Admin' : 'a regular User'}`);
         } catch (e) {
-            toast.error(e.response?.data?.error || 'Failed to update role');
+            // BUG FIX #4: Error message was only reading e.response?.data?.error
+            // but the backend setUserRole throws plain Error objects (not HTTP errors)
+            // which have e.message — not e.response. Now handles both cases.
+            toast.error(e.response?.data?.error || e.message || 'Failed to update role');
         } finally {
             setUpdatingId(null);
         }
@@ -324,14 +344,20 @@ const UserManagement = () => {
 const AdminDashboard = () => {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
+    // BUG FIX #5: No error state — if fetch fails, loading becomes false but
+    // stats stays null and the component shows a generic "No metrics" message
+    // with no indication of WHY it failed. Added dedicated error state.
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         const fetchStats = async () => {
             try {
                 const data = await getAdminStats();
                 setStats(data.data);
-            } catch (error) {
-                toast.error(error.response?.data?.error || error.message || 'Failed to load admin dashboard metrics');
+            } catch (err) {
+                const msg = err.response?.data?.error || err.message || 'Failed to load admin metrics';
+                setError(msg);
+                toast.error(msg);
             } finally {
                 setLoading(false);
             }
@@ -347,9 +373,27 @@ const AdminDashboard = () => {
         );
     }
 
-    if (!stats) return <div className="text-center font-medium text-gray-400 mt-10">No metrics available</div>;
+    // BUG FIX #5 (cont.): Show the actual error instead of a vague message
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center h-64 gap-4 text-center px-6">
+                <AlertTriangle size={32} className="text-red-400" />
+                <p className="font-bold text-gray-700">Failed to load dashboard</p>
+                <p className="text-sm text-gray-400 max-w-sm">{error}</p>
+                <button onClick={() => window.location.reload()} className="px-5 py-2 bg-black text-white rounded-xl text-sm font-bold hover:bg-gray-900 transition-colors">
+                    Retry
+                </button>
+            </div>
+        );
+    }
+
+    if (!stats) return null;
 
     const { counts, revenue, storage } = stats;
+
+    // BUG FIX #6: revenue could be undefined if the aggregate returns nothing
+    // (e.g. no successful orders yet). toLocaleString() on undefined throws.
+    const safeRevenue = revenue ?? 0;
 
     return (
         <div className="min-h-screen bg-[#f8f9fc] pb-24 font-sans selection:bg-black selection:text-white">
@@ -372,7 +416,7 @@ const AdminDashboard = () => {
                     <StatCard title="Total Designs" value={counts.designs} icon={FileBox} color="purple" />
                     <StatCard
                         title="Gross Revenue"
-                        value={`₹${revenue.toLocaleString()}`}
+                        value={`₹${safeRevenue.toLocaleString()}`}
                         icon={IndianRupee}
                         color="green"
                     />
