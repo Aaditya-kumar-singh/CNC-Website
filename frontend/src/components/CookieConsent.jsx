@@ -55,6 +55,19 @@ const CookieConsent = ({ consent, acceptAll, rejectAll, saveCustom }) => {
         marketing: consent.marketing,
     });
 
+    // BUG FIX #1: Sync custom state every time the manager opens
+    // Without this, the toggles show stale initial values (always false)
+    // when the user opens the manager from the Footer after already deciding.
+    useEffect(() => {
+        if (showManager) {
+            setCustom({
+                functional: consent.functional,
+                analytics: consent.analytics,
+                marketing: consent.marketing,
+            });
+        }
+    }, [showManager, consent.functional, consent.analytics, consent.marketing]);
+
     // Allow external triggers (e.g. Footer link) to open the manager
     useEffect(() => {
         const handler = () => setShowManager(true);
@@ -68,6 +81,7 @@ const CookieConsent = ({ consent, acceptAll, rejectAll, saveCustom }) => {
         saveCustom({ ...custom, essential: true });
         setShowManager(false);
     };
+
 
     // ─── Manager Modal ───
     if (showManager) {
@@ -86,11 +100,17 @@ const CookieConsent = ({ consent, acceptAll, rejectAll, saveCustom }) => {
                                     <p className="text-xs text-gray-400 font-medium">Manage how we use cookies</p>
                                 </div>
                             </div>
-                            {!consent.decided && (
-                                <button onClick={() => setShowManager(false)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
-                                    <X size={14} className="text-gray-600" />
-                                </button>
-                            )}
+                            {/* BUG FIX #2: Always show close button when manager is open.
+                                Previously hidden when consent.decided=true, trapping users who
+                                opened the manager from the Footer with no way to close it. */}
+                            <button
+                                onClick={() => setShowManager(false)}
+                                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+                                aria-label="Close cookie manager"
+                            >
+                                <X size={14} className="text-gray-600" />
+                            </button>
+
                         </div>
                     </div>
 

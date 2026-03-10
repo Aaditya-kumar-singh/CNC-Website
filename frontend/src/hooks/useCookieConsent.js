@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const STORAGE_KEY = 'cnc_cookie_consent';
 
@@ -21,10 +21,13 @@ export const useCookieConsent = () => {
         }
     });
 
-    // Persist to localStorage whenever consent changes
+    // Skip writing on first render — the value was just READ from localStorage
+    const isMounted = useRef(false);
     useEffect(() => {
+        if (!isMounted.current) { isMounted.current = true; return; }
         localStorage.setItem(STORAGE_KEY, JSON.stringify(consent));
     }, [consent]);
+
 
     const acceptAll = () => {
         setConsent({ essential: true, functional: true, analytics: true, marketing: true, decided: true, decidedAt: new Date().toISOString() });
