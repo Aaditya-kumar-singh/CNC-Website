@@ -88,7 +88,6 @@ userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
 };
 
 // ─── Indexes ──────────────────────────────────────────────────────────────────
-userSchema.index({ email: 1 });
 userSchema.index({ resetPasswordToken: 1 });
 
 module.exports = mongoose.model('User', userSchema);
