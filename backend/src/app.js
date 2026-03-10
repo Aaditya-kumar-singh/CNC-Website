@@ -92,12 +92,18 @@ app.use(express.urlencoded({ extended: true, limit: '50kb' }));
 
 // ─── 6. NoSQL injection sanitizer ────────────────────────────────────────────
 // Strips $-prefixed MongoDB operators from req.body, req.params, req.query
-app.use(mongoSanitize({
-    replaceWith: '_',
-    onSanitizeError: (req, key) => {
-        console.warn(`[Security] Attempted NoSQL injection on key: ${key} from IP: ${req.ip}`);
-    }
-}));
+app.use((req, res, next) => {
+    ['body', 'query', 'params'].forEach(key => {
+        if (req[key] && typeof req[key] === 'object') {
+            for (const prop of Object.keys(req[key])) {
+                req[key][prop] = mongoSanitize.sanitize(req[key][prop], {
+                    replaceWith: '_'
+                });
+            }
+        }
+    });
+    next();
+});
 
 // ─── 7. XSS sanitizer ────────────────────────────────────────────────────────
 // Strips HTML/script tags from all string fields in req.body, req.query, req.params
