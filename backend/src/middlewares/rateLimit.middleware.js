@@ -63,6 +63,15 @@ const uploadLimiter = rateLimit({
     },
 });
 
+// Review limiter — 5 reviews / hour (spam prevention)
+const reviewLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 5,
+    handler: (req, res) => {
+        res.status(429).json({ error: 'Too many reviews submitted. Please try again later.' });
+    },
+});
+
 module.exports = {
     limiter,
     authLimiter,
@@ -70,4 +79,5 @@ module.exports = {
     downloadLimiter,
     paymentLimiter,
     uploadLimiter,
+    reviewLimiter,
 };

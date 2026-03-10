@@ -204,6 +204,12 @@ exports.verifyAndFulfillSubscription = async (sessionId, userId) => {
         const session = await stripe.checkout.sessions.retrieve(sessionId);
 
         if (session.payment_status === 'paid') {
+            // ✅ SECURITY: Ensure the session belongs to the user claiming it!
+            // Without this, anyone could submit a known valid session ID and steal the subscripton features.
+            if (session.client_reference_id !== userId.toString() && session.metadata?.userId !== userId.toString()) {
+                throw new Error('Unauthorized: This subscription does not belong to you.');
+            }
+
             // ✅ SECURITY: downloadsGrant comes from server-side config, NOT from
             // session.metadata (which could be tampered with by a malicious client).
             const downloadsGrant = 20; // Server-side source of truth
