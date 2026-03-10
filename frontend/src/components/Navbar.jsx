@@ -66,7 +66,7 @@ const Navbar = () => {
 
     return (
         <>
-            <nav className={`sticky top-0 z-50 transition-all duration-300 ${isHome ? 'bg-white/70 backdrop-blur-xl border-b border-white/40' : 'bg-white border-b border-gray-100'} px-4 sm:px-6 lg:px-12 py-3 lg:py-4`}>
+            <nav className={`sticky top-0 z-50 transition-all duration-300 ${isHome ? 'bg-white/70 backdrop-blur-xl border-b border-white/40' : 'bg-white border-b border-gray-100'} px-4 sm:px-6 lg:px-6 xl:px-12 py-3 lg:py-4`}>
                 <div className="max-w-[1400px] mx-auto flex items-center justify-between">
 
                     {/* Logo */}
@@ -80,14 +80,14 @@ const Navbar = () => {
                     </div>
 
                     {/* Desktop Category Links & Search */}
-                    <div className="hidden lg:flex items-center justify-center flex-1 gap-6 px-4">
+                    <div className="hidden lg:flex items-center justify-center flex-1 gap-3 xl:gap-5 px-2">
                         {/* Categories Dropdown */}
                         <div className="relative" ref={categoriesRef}>
                             <button
                                 onClick={() => setCategoriesOpen(!categoriesOpen)}
-                                className={`flex items-center gap-1 text-[13px] font-bold tracking-widest transition-colors ${categoriesOpen || location.pathname.includes('/category/') ? 'text-black' : 'text-gray-500 hover:text-black'}`}
+                                className={`flex items-center gap-1 text-[12px] font-bold tracking-widest transition-colors ${categoriesOpen || location.pathname.includes('/category/') ? 'text-black' : 'text-gray-500 hover:text-black'}`}
                             >
-                                CATEGORIES <ChevronDown size={14} className={`transition-transform ${categoriesOpen ? 'rotate-180' : ''}`} />
+                                CATEGORIES <ChevronDown size={13} className={`transition-transform ${categoriesOpen ? 'rotate-180' : ''}`} />
                             </button>
 
                             {categoriesOpen && (
@@ -106,27 +106,29 @@ const Navbar = () => {
                             )}
                         </div>
 
-                        {/* Main Links */}
+                        {/* Main Links — ABOUT US & CONTACT US only at xl+ */}
                         {mainNavLinks.map((link) => (
                             <Link
                                 key={link.path}
                                 to={link.path}
-                                className={`text-[13px] font-bold tracking-widest transition-colors ${location.pathname === link.path ? 'text-black' : 'text-gray-500 hover:text-black'}`}
+                                className={`text-[12px] font-bold tracking-widest transition-colors whitespace-nowrap
+                                    ${(link.name === 'ABOUT US' || link.name === 'CONTACT US') ? 'hidden xl:inline' : ''}
+                                    ${location.pathname === link.path ? 'text-black' : 'text-gray-500 hover:text-black'}`}
                             >
                                 {link.name}
                             </Link>
                         ))}
 
                         {/* Global Search */}
-                        <form onSubmit={handleSearchSubmit} className="relative hidden xl:block ml-4">
+                        <form onSubmit={handleSearchSubmit} className="relative hidden xl:block ml-2">
                             <input
                                 type="text"
-                                placeholder="Search designs, parts..."
+                                placeholder="Search designs..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-48 xl:w-64 bg-gray-50/80 hover:bg-gray-100 border border-transparent focus:border-gray-200 focus:bg-white text-sm rounded-full pl-10 pr-4 py-2 outline-none transition-all placeholder-gray-400 font-medium text-gray-700"
+                                className="w-40 xl:w-52 bg-gray-50/80 hover:bg-gray-100 border border-transparent focus:border-gray-200 focus:bg-white text-sm rounded-full pl-9 pr-4 py-2 outline-none transition-all placeholder-gray-400 font-medium text-gray-700"
                             />
-                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={15} />
                         </form>
                     </div>
 

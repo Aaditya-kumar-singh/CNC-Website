@@ -167,14 +167,14 @@ const Home = () => {
                 <div className="absolute top-[10%] -right-[10%] w-[40%] h-[70%] rounded-full bg-gradient-to-bl from-blue-100/40 via-purple-50/40 to-transparent blur-3xl mix-blend-multiply"></div>
             </div>
 
-            <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-12 lg:pt-20">
+            <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-12 lg:pt-20 overflow-hidden">
                 {/* Hero Section */}
-                <div className="flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-8 mb-16 lg:mb-24">
-                    <div className="flex-1 max-w-2xl z-10">
-                        <h1 className="text-5xl lg:text-[4.5rem] leading-[1.05] font-black text-[#111] tracking-tight mb-6">
+                <div className="flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-6 mb-16 lg:mb-24">
+                    <div className="flex-1 max-w-2xl z-10 w-full">
+                        <h1 className="text-4xl sm:text-5xl lg:text-5xl xl:text-[4rem] leading-[1.08] font-black text-[#111] tracking-tight mb-5">
                             Premium Wood CNC Designs &amp; 3D Router Reliefs
                         </h1>
-                        <p className="text-xl lg:text-2xl text-gray-600 font-medium mb-10">
+                        <p className="text-lg lg:text-xl text-gray-600 font-medium mb-8">
                             High Quality STL, DXF, and SVG Files for Woodworkers
                         </p>
 
@@ -191,8 +191,8 @@ const Home = () => {
                         </div>
                     </div>
 
-                    <div className="flex-1 flex justify-center lg:justify-end relative w-full lg:w-auto">
-                        <div className="w-full max-w-[600px] aspect-[4/3] rounded-[2rem] bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shadow-2xl shadow-gray-300/50 p-8 overflow-hidden relative group">
+                    <div className="flex-shrink-0 flex justify-center lg:justify-end relative w-full lg:w-[45%] xl:w-[48%]">
+                        <div className="w-full max-w-[520px] aspect-[4/3] rounded-[2rem] bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shadow-2xl shadow-gray-300/50 p-6 overflow-hidden relative group">
                             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.02)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
                             <img
                                 src={heroImg}
