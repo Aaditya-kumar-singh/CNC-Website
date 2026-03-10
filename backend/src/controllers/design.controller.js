@@ -22,6 +22,12 @@ exports.getAllDesigns = async (req, res) => {
 // Get single design Details
 exports.getDesign = async (req, res) => {
     try {
+        // BUG FIX #4: No ObjectId validation — invalid IDs like '123' throw
+        // Mongoose CastError instead of returning a clean 404.
+        if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+            return errorResponse(res, 404, 'No design found with that ID');
+        }
+
         const design = await designService.getDesignById(req.params.id);
 
         if (!design) {
@@ -39,6 +45,10 @@ exports.getDesign = async (req, res) => {
 // Get related designs
 exports.getRelatedDesigns = async (req, res) => {
     try {
+        if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+            return errorResponse(res, 404, 'No design found with that ID');
+        }
+
         const design = await designService.getDesignById(req.params.id);
         if (!design) {
             return errorResponse(res, 404, 'No design found with that ID');
@@ -119,6 +129,17 @@ exports.deleteDesign = async (req, res) => {
 exports.updateDesign = async (req, res) => {
     try {
         const { title, description, price, category } = req.body;
+
+        // BUG FIX #5: No ObjectId validation on update endpoint
+        if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+            return errorResponse(res, 404, 'Design not found');
+        }
+
+        // BUG FIX #5 (cont.): Price validation existed at CREATE but not UPDATE.
+        // An admin could set a negative price via PATCH, breaking the cart total.
+        if (price !== undefined && (isNaN(Number(price)) || Number(price) < 0)) {
+            return errorResponse(res, 400, 'Price must be a valid non-negative number.');
+        }
 
         const updatedDesign = await designService.updateDesign(req.params.id, {
             ...(title && { title }),

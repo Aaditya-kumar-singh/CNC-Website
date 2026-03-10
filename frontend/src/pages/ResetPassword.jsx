@@ -22,8 +22,8 @@ const ResetPassword = () => {
             return toast.error("Passwords don't match");
         }
 
-        if (password.length < 6) {
-            return toast.error("Password must be at least 6 characters");
+        if (password.length < 8) {
+            return toast.error('Password must be at least 8 characters');
         }
 
         setLoading(true);
@@ -76,7 +76,7 @@ const ResetPassword = () => {
                                 onChange={(e) => setPassword(e.target.value)}
                                 className="w-full pl-5 pr-12 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-gray-900 placeholder-gray-400"
                                 placeholder="••••••••"
-                                minLength={6}
+                                minLength={8}
                                 required
                             />
                             <button
@@ -96,7 +96,7 @@ const ResetPassword = () => {
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             className="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-gray-900 placeholder-gray-400"
                             placeholder="••••••••"
-                            minLength={6}
+                            minLength={8}
                             required
                         />
                     </div>

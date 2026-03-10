@@ -142,7 +142,7 @@ const UploadDesign = () => {
                                                 name="price"
                                                 min="0"
                                                 value={price}
-                                                onChange={(e) => setPrice(e.target.value)}
+                                                onChange={(e) => setPrice(e.target.value ? Number(e.target.value) : '')}
                                                 required
                                                 className="w-full pl-10 pr-5 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all font-medium text-gray-900 placeholder-gray-400"
                                                 placeholder="0 for free"

@@ -9,20 +9,34 @@ const startCartAbandonmentJob = () => {
         try {
             console.log('[Cron] Running Abandoned Cart Email Scan...');
 
-            // Find users who:
-            // 1. Have items in cart
-            // 2. Haven't received an abandoned cart email yet.
+            // BUG FIX #1: Was using { $exists: false } which means after the FIRST
+            // email ever, the user NEVER gets another abandoned-cart email even if
+            // they abandon their cart again weeks later.
+            // Fix: use a 24-hour cooldown window instead of a simple existence check.
+            const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
             const usersWithAbandonedCarts = await User.find({
                 'cart.0': { $exists: true },
-                lastAbandonedCartEmailSentAt: { $exists: false }
+                $or: [
+                    { lastAbandonedCartEmailSentAt: { $exists: false } },
+                    { lastAbandonedCartEmailSentAt: { $lt: oneDayAgo } }
+                ]
             }).populate('cart', 'title price');
 
+            let emailsSent = 0;
+
             for (const user of usersWithAbandonedCarts) {
-                const numItems = user.cart.length;
+                // BUG FIX #2: Soft-deleted designs return null from populate.
+                // Accessing item.title or item.price on a null crashes the entire cron job loop.
+                // Filter out nulls before processing.
+                const validCartItems = user.cart.filter(item => item != null);
+                if (validCartItems.length === 0) continue;
+
+                const numItems = validCartItems.length;
                 let cartSummary = '';
                 let totalValue = 0;
 
-                user.cart.forEach((item, idx) => {
+                validCartItems.forEach((item) => {
                     cartSummary += `- ${item.title} (₹${item.price})\n`;
                     totalValue += item.price;
                 });
@@ -36,14 +50,14 @@ const startCartAbandonmentJob = () => {
                         message: emailMessage
                     });
 
-                    // Update user so we don't spam them again quickly
                     user.lastAbandonedCartEmailSentAt = new Date();
-                    await user.save();
+                    await user.save({ validateBeforeSave: false });
+                    emailsSent++;
                 } catch (emailError) {
                     console.error(`[Cron] Error sending email to ${user.email}:`, emailError);
                 }
             }
-            console.log(`[Cron] Finished scanning. Sent ${usersWithAbandonedCarts.length} emails.`);
+            console.log(`[Cron] Finished scanning. Sent ${emailsSent} emails.`);
 
         } catch (error) {
             console.error('[Cron] Error in Abandoned Cart Job:', error);
