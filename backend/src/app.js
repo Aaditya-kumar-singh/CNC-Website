@@ -20,8 +20,21 @@ const path = require('path');
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
 // 1. CORS setup (MUST be first so even rate-limited or blocked requests get CORS headers)
+const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    'http://localhost:5173',
+    'http://localhost:5174' // Vite fallback
+];
+
 app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        // or allow any Vercel preview domain dynamically
+        if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+            return callback(null, true);
+        }
+        return callback(new Error('The CORS policy for this site does not allow access from the specified Origin.'), false);
+    },
     credentials: true
 }));
 
