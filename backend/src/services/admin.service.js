@@ -76,3 +76,32 @@ exports.getDashboardStats = async () => {
         }
     };
 };
+
+// ─── Get paginated user list ──────────────────────────────────────────────────
+exports.getAllUsers = async (page = 1, limit = 20, search = '') => {
+    const query = search
+        ? { $or: [{ name: { $regex: search, $options: 'i' } }, { email: { $regex: search, $options: 'i' } }] }
+        : {};
+
+    const [users, total] = await Promise.all([
+        User.find(query)
+            .select('name email role createdAt purchasedDesigns subscriptionStatus downloadsRemaining')
+            .sort({ createdAt: -1 })
+            .skip((page - 1) * limit)
+            .limit(limit)
+            .lean(),
+        User.countDocuments(query)
+    ]);
+
+    return { users, total, page, pages: Math.ceil(total / limit) };
+};
+
+// ─── Promote / demote user role ───────────────────────────────────────────────
+exports.setUserRole = async (userId, role) => {
+    if (!['user', 'admin'].includes(role)) throw new Error('Invalid role');
+    const user = await User.findByIdAndUpdate(userId, { role }, { new: true, runValidators: true })
+        .select('name email role');
+    if (!user) throw new Error('User not found');
+    return user;
+};
+

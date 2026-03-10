@@ -8,7 +8,9 @@ const router = express.Router();
 // All routes here should be protected and restricted to admin
 router.use(protect, restrictToAdmin);
 
-router.route('/stats')
-    .get(adminController.getDashboardStats);
+router.get('/stats', adminController.getDashboardStats);
+router.get('/users', adminController.getUsers);
+router.patch('/users/:id/role', adminController.updateUserRole);
 
 module.exports = router;
+
