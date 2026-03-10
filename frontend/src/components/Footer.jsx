@@ -62,8 +62,15 @@ const Footer = () => {
                             <Link to="/pricing" className="text-gray-500 hover:text-black font-medium text-[15px] transition-colors">Pricing</Link>
                             <a href="#" className="text-gray-500 hover:text-black font-medium text-[15px] transition-colors">Privacy Policy</a>
                             <a href="#" className="text-gray-500 hover:text-black font-medium text-[15px] transition-colors">Terms of Service</a>
+                            <button
+                                onClick={() => window.dispatchEvent(new CustomEvent('cnc:open-cookie-manager'))}
+                                className="text-left text-gray-500 hover:text-black font-medium text-[15px] transition-colors flex items-center gap-1.5 group"
+                            >
+                                🍪 Cookie Preferences
+                            </button>
                         </div>
                     </div>
+
                 </div>
 
                 <div className="mt-16 pt-8 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 text-gray-400 font-medium text-sm">

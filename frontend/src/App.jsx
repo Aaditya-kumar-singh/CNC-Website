@@ -25,8 +25,13 @@ import Pricing from './pages/Pricing';
 import Bundles from './pages/Bundles';
 import BundleDetails from './pages/BundleDetails';
 import SEO from './components/SEO';
+import CookieConsent from './components/CookieConsent';
+import { useCookieConsent } from './hooks/useCookieConsent';
+
 
 function App() {
+  const { consent, acceptAll, rejectAll, saveCustom } = useCookieConsent();
+
   return (
     <Router>
       <AuthProvider>
@@ -89,6 +94,12 @@ function App() {
           </main>
           <Footer />
         </div>
+        <CookieConsent
+          consent={consent}
+          acceptAll={acceptAll}
+          rejectAll={rejectAll}
+          saveCustom={saveCustom}
+        />
         <Toaster position="bottom-right" toastOptions={{
           style: {
             background: '#111',
