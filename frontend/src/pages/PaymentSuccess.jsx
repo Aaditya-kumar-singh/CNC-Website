@@ -15,6 +15,12 @@ const PaymentSuccess = () => {
     const type = searchParams.get('type');
 
     useEffect(() => {
+        // BUG FIX #1: Use a ref to hold the timer ID so we can cancel it
+        // if the component unmounts before the 3s redirect fires.
+        // Without this: React warning "Can't perform a state update on an unmounted component"
+        // AND navigate() fires after unmount causing potential double-navigation.
+        let redirectTimer;
+
         const verifyStripePayment = async () => {
             if (!sessionId) {
                 setStatus('error');
@@ -32,8 +38,7 @@ const PaymentSuccess = () => {
                 setStatus('success');
                 toast.success('Payment verified successfully!');
 
-                // Automatically redirect to library after a few seconds
-                setTimeout(() => {
+                redirectTimer = setTimeout(() => {
                     navigate('/my-purchases');
                 }, 3000);
             } catch (error) {
@@ -44,6 +49,9 @@ const PaymentSuccess = () => {
         };
 
         verifyStripePayment();
+
+        // Cleanup: cancel the pending redirect if user navigates away early
+        return () => clearTimeout(redirectTimer);
     }, [sessionId, type, navigate, refreshUser]);
 
     return (

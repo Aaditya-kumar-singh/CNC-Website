@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { getMyCart, toggleCart } from '../services/auth.service';
@@ -16,7 +16,10 @@ const Cart = () => {
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
 
-    const fetchCart = async () => {
+    // BUG FIX #2: fetchCart was a plain function defined outside useEffect.
+    // This means it gets recreated on every render, and if added to useEffect deps
+    // it causes an infinite loop. Wrap in useCallback so it's stable.
+    const fetchCart = useCallback(async () => {
         try {
             const response = await getMyCart();
             setCartDesigns(response.data.designs || []);
@@ -25,7 +28,7 @@ const Cart = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         if (user) {
@@ -34,7 +37,7 @@ const Cart = () => {
             setLoading(false);
             navigate('/login');
         }
-    }, [user, navigate]);
+    }, [user, navigate, fetchCart]);
 
     const handleRemoveFromCart = async (designId) => {
         try {

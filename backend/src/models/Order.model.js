@@ -25,10 +25,10 @@ const orderSchema = new mongoose.Schema({
         default: 'pending',
     },
     paymentId: {
-        type: String, // from razorpay
+        type: String, // Stripe payment_intent id (set after verification)
     },
     orderId: {
-        type: String, // razorpay order id
+        type: String, // Stripe checkout session id (or 'pending_...' before session creation)
         required: true,
     }
 }, {

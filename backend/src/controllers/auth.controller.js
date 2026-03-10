@@ -147,8 +147,12 @@ exports.resetPassword = async (req, res) => {
         const { token } = req.params;
         const { password } = req.body;
 
-        if (!password || password.length < 6) {
-            return errorResponse(res, 400, 'Password must be at least 6 characters long');
+        // BUG FIX #3: This was checking password.length < 6 but registration
+        // requires 8 chars. A user could set a 6-char password on reset and
+        // then be unable to log in (if register-level server validation rejects).
+        // Enforced consistently at 8 characters to match register.
+        if (!password || password.length < 8) {
+            return errorResponse(res, 400, 'Password must be at least 8 characters long');
         }
 
         const user = await authService.resetPassword(token, password);
@@ -171,11 +175,15 @@ exports.getMyPurchases = async (req, res) => {
 
 exports.toggleWishlist = async (req, res) => {
     try {
-        const { id } = req.params; // designId
+        const { id } = req.params;
+        // BUG FIX #4: Invalid ObjectId (e.g. '123abc') causes Mongoose CastError
+        // which bubbles to the global error handler with a confusing message.
+        // Validate format here for a clean, specific 400 response.
+        if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+            return errorResponse(res, 400, 'Invalid design ID');
+        }
         const result = await authService.toggleWishlist(req.user.id, id);
-        successResponse(res, 200, {
-            data: result
-        });
+        successResponse(res, 200, { data: result });
     } catch (error) {
         errorResponse(res, 400, error.message);
     }
@@ -194,11 +202,13 @@ exports.getMyWishlist = async (req, res) => {
 
 exports.toggleCart = async (req, res) => {
     try {
-        const { id } = req.params; // designId
+        const { id } = req.params;
+        // BUG FIX #4 (cont.): Same ObjectId validation as toggleWishlist.
+        if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+            return errorResponse(res, 400, 'Invalid design ID');
+        }
         const result = await authService.toggleCart(req.user.id, id);
-        successResponse(res, 200, {
-            data: result
-        });
+        successResponse(res, 200, { data: result });
     } catch (error) {
         errorResponse(res, 400, error.message);
     }
