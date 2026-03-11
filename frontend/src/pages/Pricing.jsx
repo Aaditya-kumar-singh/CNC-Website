@@ -101,7 +101,7 @@ const Pricing = () => {
                         </button>
 
                         <p className="text-center text-xs font-bold text-gray-400 mt-6 flex items-center justify-center gap-1">
-                            <ShieldCheck size={14} /> Secure Payment via Stripe
+                            <ShieldCheck size={14} /> Secure Payment via Razorpay
                         </p>
                     </div>
                 </div>

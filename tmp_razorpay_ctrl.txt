@@ -2,7 +2,7 @@ const Design = require('../models/Design.model');
 const { successResponse, errorResponse, serverError } = require('../utils/responseHandler');
 const paymentService = require('../services/payment.service');
 
-// Create Razorpay order (Single or Multiple items)
+// Create order for Razorpay UI (Single or Multiple items)
 exports.createOrder = async (req, res) => {
     try {
         const { designIds } = req.body;
@@ -17,7 +17,7 @@ exports.createOrder = async (req, res) => {
             return errorResponse(res, 404, 'One or more designs not found');
         }
 
-        // Filter out any free designs
+        // Filter out any free designs just in case they were passed (although free = download directly without razorpay)
         const chargeableDesigns = designs.filter(d => d.price > 0);
 
         if (chargeableDesigns.length === 0) {
@@ -28,6 +28,7 @@ exports.createOrder = async (req, res) => {
 
         successResponse(res, 200, { order });
     } catch (error) {
+        // Fix #2: duplicate purchase is a 400 client error, not a 500 server crash
         if (error.message === 'You have already purchased one or more of these designs.') {
             return errorResponse(res, 400, error.message);
         }
@@ -35,7 +36,7 @@ exports.createOrder = async (req, res) => {
     }
 };
 
-// Verify Razorpay payment signature and fulfil order
+// Verify payment signature
 exports.verifyPayment = async (req, res) => {
     try {
         const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
@@ -57,9 +58,6 @@ exports.verifyPayment = async (req, res) => {
             return errorResponse(res, 400, 'Invalid signature. Payment failed');
         }
     } catch (error) {
-        if (error.message && error.message.startsWith('Unauthorized')) {
-            return errorResponse(res, 403, error.message);
-        }
         serverError(res, error);
     }
 };

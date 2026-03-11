@@ -22,8 +22,8 @@ exports.createRazorpayOrder = async (designs, userId) => {
     const totalAmount = designs.reduce((sum, design) => sum + design.price, 0);
 
     const options = {
-        amount: Math.round(totalAmount * 100), // Amount in paise
-        currency: 'INR',
+        amount: totalAmount * 100, // Amount in paise
+        currency: "INR",
         receipt: `rcpt_${Date.now()}`
     };
 
@@ -41,14 +41,15 @@ exports.createRazorpayOrder = async (designs, userId) => {
 };
 
 exports.verifyAndFulfillPayment = async (orderId, paymentId, signature, userId) => {
-    const sign = orderId + '|' + paymentId;
+    const sign = orderId + "|" + paymentId;
     const expectedSign = crypto
-        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+        .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
         .update(sign.toString())
-        .digest('hex');
+        .digest("hex");
 
     if (signature === expectedSign) {
-        // Payment Successful — update order status
+        // Payment Successful
+        // Update Order Status
         const order = await Order.findOneAndUpdate(
             { orderId: orderId },
             { paymentStatus: 'success', paymentId: paymentId },
@@ -56,21 +57,16 @@ exports.verifyAndFulfillPayment = async (orderId, paymentId, signature, userId) 
         );
 
         if (order) {
-            // ✅ SECURITY: Cross-check that this order was created by the requesting user.
-            if (order.userId.toString() !== userId.toString()) {
-                throw new Error('Unauthorized: This order does not belong to you.');
-            }
-
-            // Add designs to user library and clear cart
+            // Add to user purchased library, and clear the cart!
             await User.findByIdAndUpdate(userId, {
                 $addToSet: { purchasedDesigns: { $each: order.designIds } },
-                $set: { cart: [] }
+                $set: { cart: [] } // Clear cart on successful purchase
             });
         }
 
         return true;
     } else {
-        // Payment Failed — invalid signature
+        // Payment Failed
         await Order.findOneAndUpdate(
             { orderId: orderId },
             { paymentStatus: 'failed', paymentId: paymentId }
