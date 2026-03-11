@@ -1,6 +1,5 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createSubscription } from '../services/payment.service';
 import { AuthContext } from '../context/AuthContext';
 import { Check, ShieldCheck, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -19,24 +18,11 @@ const Pricing = () => {
 
         if (user.subscriptionStatus === 'active') {
             toast.success('You have an active subscription!');
-            navigate('/my-purchases'); // Or an account page
+            navigate('/my-purchases');
             return;
         }
 
-        try {
-            setProcessing(true);
-            const data = await createSubscription('pro_monthly');
-
-            if (data.sessionUrl) {
-                window.location.href = data.sessionUrl;
-            } else {
-                toast.error('Failed to initialize checkout');
-                setProcessing(false);
-            }
-        } catch (error) {
-            toast.error(error.message || 'Failed to start subscription');
-            setProcessing(false);
-        }
+        toast('Subscription coming soon! Contact us to upgrade.', { icon: '🚀' });
     };
 
     return (
