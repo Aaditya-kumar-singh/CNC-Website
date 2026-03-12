@@ -27,6 +27,7 @@ import BundleDetails from './pages/BundleDetails';
 import SEO from './components/SEO';
 import CookieConsent from './components/CookieConsent';
 import { useCookieConsent } from './hooks/useCookieConsent';
+import ScrollToTop from './components/ScrollToTop';
 
 
 function App() {
@@ -34,6 +35,7 @@ function App() {
 
   return (
     <Router>
+      <ScrollToTop />
       <AuthProvider>
         <SEO />
         <div className="flex flex-col min-h-screen bg-[#f8f9fc] text-gray-900 font-sans selection:bg-black selection:text-white">

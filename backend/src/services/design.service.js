@@ -108,6 +108,15 @@ exports.updateDesign = async (id, updateData) => {
 exports.softDeleteDesign = async (design) => {
     design.isActive = false;
     await design.save();
+
+    // PERMANENT FIX: Remove this design from all users' carts and wishlists
+    // so the badge counts stay accurate.
+    const User = require('../models/User.model');
+    await User.updateMany(
+        {}, 
+        { $pull: { cart: design._id, wishlist: design._id } }
+    );
+
     return design;
 };
 
