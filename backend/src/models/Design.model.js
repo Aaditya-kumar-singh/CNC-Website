@@ -50,6 +50,7 @@ const designSchema = new mongoose.Schema({
 designSchema.index({ isActive: 1, category: 1 });
 designSchema.index({ isActive: 1, createdAt: -1 });
 designSchema.index({ isActive: 1, price: 1 });
+designSchema.index({ isActive: 1, downloads: -1 });
 // Fix #5: text index for fast full-text search across title and description
 designSchema.index({ title: 'text', description: 'text' });
 

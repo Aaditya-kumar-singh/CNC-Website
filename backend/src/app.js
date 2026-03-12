@@ -5,6 +5,8 @@ const morgan = require('morgan');
 const mongoSanitize = require('express-mongo-sanitize');
 const hpp = require('hpp');
 const path = require('path');
+const compression = require('compression');
+const logger = require('./config/logger');
 
 const xssSanitizer = require('./middlewares/sanitize.middleware');
 const { limiter } = require('./middlewares/rateLimit.middleware');
@@ -22,6 +24,13 @@ const app = express();
 
 // Trust reverse proxy (Vercel/Render) so rate limiters get correct IP
 app.set('trust proxy', 1);
+
+// ─── 0. Response Compression ─────────────────────────────────────────
+// Gzip/Brotli compress all responses > 1kb — reduces bandwidth ~60-80%
+app.use(compression({
+    level: 6,       // balance: good compression without too much CPU
+    threshold: 1024 // only compress if response body is > 1kb
+}));
 
 // ─── 0. Static uploads (local dev fallback) ──────────────────────────────────
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
@@ -75,12 +84,14 @@ app.use(helmet({
     },
 }));
 
-// ─── 3. Development logging ───────────────────────────────────────────────────
+// ─── 3. Request logging ───────────────────────────────────────────────────────
 if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'));
 } else {
-    // Minimal combined logging in production (method + url + status + response time)
-    app.use(morgan('combined'));
+    // In production: pipe Morgan through Winston so HTTP logs land in combined.log
+    app.use(morgan('combined', {
+        stream: { write: (msg) => logger.http(msg.trim()) }
+    }));
 }
 
 // ─── 4. Global rate limiter (100 req / 15 min / IP) ─────────────────────────
@@ -184,7 +195,13 @@ app.use((err, req, res, next) => {
 
     // Only log true server errors (not expected 4xx client errors)
     if (statusCode >= 500) {
-        console.error('Unhandled Server Error 💥:', err);
+        logger.error({
+            message: err.message,
+            stack: err.stack,
+            method: req.method,
+            url: req.originalUrl,
+            statusCode,
+        });
     }
 
     res.status(statusCode).json({ error: message });

@@ -12,13 +12,12 @@ exports.getDashboardStats = async (req, res) => {
 
 exports.getUsers = async (req, res) => {
     try {
-        const { page, limit, search, role, subscription, sortBy, dateFrom, dateTo } = req.query;
+        const { page, limit, search, role, sortBy, dateFrom, dateTo } = req.query;
         const data = await adminService.getAllUsers({
             page: parseInt(page) || 1,
             limit: parseInt(limit) || 20,
             search: search || '',
             role: role || '',
-            subscription: subscription || '',
             sortBy: sortBy || 'newest',
             dateFrom: dateFrom || '',
             dateTo: dateTo || '',

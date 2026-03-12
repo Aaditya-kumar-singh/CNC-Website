@@ -22,3 +22,11 @@ build/
 
 # Uploads (local dev only)
 public/uploads/
+
+# Temporary and test files
+test.*
+valid.*
+users.json
+error.txt
+preview_file_log.json
+tests/

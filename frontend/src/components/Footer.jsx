@@ -59,7 +59,6 @@ const Footer = () => {
                         <div className="flex flex-col gap-3">
                             <Link to="/about" className="text-gray-500 hover:text-black font-medium text-[15px] transition-colors">About Us</Link>
                             <Link to="/contact" className="text-gray-500 hover:text-black font-medium text-[15px] transition-colors">Contact Support</Link>
-                            <Link to="/pricing" className="text-gray-500 hover:text-black font-medium text-[15px] transition-colors">Pricing</Link>
                             <a href="#" className="text-gray-500 hover:text-black font-medium text-[15px] transition-colors">Privacy Policy</a>
                             <a href="#" className="text-gray-500 hover:text-black font-medium text-[15px] transition-colors">Terms of Service</a>
                             <button

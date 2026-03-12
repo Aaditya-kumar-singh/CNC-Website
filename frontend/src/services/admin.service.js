@@ -11,7 +11,6 @@ export const getAdminUsers = async (filters = {}) => {
         limit: 20,
         search: filters.search || '',
         role: filters.role || '',
-        subscription: filters.subscription || '',
         sortBy: filters.sortBy || 'newest',
         dateFrom: filters.dateFrom || '',
         dateTo: filters.dateTo || '',

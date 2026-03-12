@@ -14,7 +14,7 @@ const Bundles = () => {
         const fetchBundles = async () => {
             try {
                 const data = await getAllBundles();
-                setBundles(data.data.bundles);
+                setBundles(data.bundles);
             } catch (error) {
                 toast.error('Failed to load bundles');
             } finally {

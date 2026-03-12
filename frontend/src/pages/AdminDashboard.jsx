@@ -47,14 +47,13 @@ const UserManagement = () => {
     // Draft filter values (inside the panel)
     const [search, setSearch] = useState('');
     const [role, setRole] = useState('');
-    const [subscription, setSubscription] = useState('');
     const [sortBy, setSortBy] = useState('newest');
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
 
     // Committed (applied) filters — what the API actually uses
     const [applied, setApplied] = useState({
-        search: '', role: '', subscription: '', sortBy: 'newest', dateFrom: '', dateTo: ''
+        search: '', role: '', sortBy: 'newest', dateFrom: '', dateTo: ''
     });
 
     // BUG FIX #1: fetchUsers was re-created on every render because the
@@ -86,16 +85,16 @@ const UserManagement = () => {
             toast.error('"Joined From" date cannot be after "Joined Until" date');
             return;
         }
-        const next = { search, role, subscription, sortBy, dateFrom, dateTo };
+        const next = { search, role, sortBy, dateFrom, dateTo };
         setApplied(next);
         setPage(1);
         setFiltersOpen(false);
     };
 
     const resetFilters = () => {
-        setSearch(''); setRole(''); setSubscription('');
+        setSearch(''); setRole('');
         setSortBy('newest'); setDateFrom(''); setDateTo('');
-        const cleared = { search: '', role: '', subscription: '', sortBy: 'newest', dateFrom: '', dateTo: '' };
+        const cleared = { search: '', role: '', sortBy: 'newest', dateFrom: '', dateTo: '' };
         setApplied(cleared);
         setPage(1);
     };
@@ -104,7 +103,6 @@ const UserManagement = () => {
         const updates = { [key]: defaultVal };
         if (key === 'search') setSearch('');
         if (key === 'role') setRole('');
-        if (key === 'subscription') setSubscription('');
         if (key === 'sortBy') { setSortBy('newest'); updates.sortBy = 'newest'; }
         if (key === 'dateFrom') setDateFrom('');
         if (key === 'dateTo') setDateTo('');
@@ -134,7 +132,7 @@ const UserManagement = () => {
         }
     };
 
-    const activeFiltersCount = [applied.search, applied.role, applied.subscription, applied.dateFrom, applied.dateTo].filter(Boolean).length
+    const activeFiltersCount = [applied.search, applied.role, applied.dateFrom, applied.dateTo].filter(Boolean).length
         + (applied.sortBy !== 'newest' ? 1 : 0);
 
     return (
@@ -195,14 +193,6 @@ const UserManagement = () => {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-gray-500 mb-2 tracking-wider">SUBSCRIPTION</label>
-                            <select value={subscription} onChange={e => setSubscription(e.target.value)} className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:border-blue-500">
-                                <option value="">All</option>
-                                <option value="active">Active</option>
-                                <option value="none">No Subscription</option>
-                            </select>
-                        </div>
-                        <div>
                             <label className="block text-xs font-bold text-gray-500 mb-2 tracking-wider">SORT BY</label>
                             <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:border-blue-500">
                                 <option value="newest">Newest First</option>
@@ -230,12 +220,10 @@ const UserManagement = () => {
                 </div>
             )}
 
-            {/* Active filter badge chips */}
             {activeFiltersCount > 0 && (
                 <div className="flex flex-wrap gap-2 mb-4">
                     {applied.search && <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-100 text-xs font-bold px-3 py-1.5 rounded-full">Search: "{applied.search}" <button onClick={() => removeFilter('search')}><X size={10} /></button></span>}
                     {applied.role && <span className="inline-flex items-center gap-1.5 bg-purple-50 text-purple-700 border border-purple-100 text-xs font-bold px-3 py-1.5 rounded-full">Role: {applied.role} <button onClick={() => removeFilter('role')}><X size={10} /></button></span>}
-                    {applied.subscription && <span className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 border border-green-100 text-xs font-bold px-3 py-1.5 rounded-full">Sub: {applied.subscription} <button onClick={() => removeFilter('subscription')}><X size={10} /></button></span>}
                     {applied.sortBy !== 'newest' && <span className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 border border-gray-200 text-xs font-bold px-3 py-1.5 rounded-full">Sort: {applied.sortBy} <button onClick={() => removeFilter('sortBy', 'newest')}><X size={10} /></button></span>}
                     {applied.dateFrom && <span className="inline-flex items-center gap-1.5 bg-orange-50 text-orange-700 border border-orange-100 text-xs font-bold px-3 py-1.5 rounded-full">From: {applied.dateFrom} <button onClick={() => removeFilter('dateFrom')}><X size={10} /></button></span>}
                     {applied.dateTo && <span className="inline-flex items-center gap-1.5 bg-orange-50 text-orange-700 border border-orange-100 text-xs font-bold px-3 py-1.5 rounded-full">Until: {applied.dateTo} <button onClick={() => removeFilter('dateTo')}><X size={10} /></button></span>}
@@ -252,7 +240,6 @@ const UserManagement = () => {
                                 <th className="text-left px-6 py-4 font-bold text-gray-500 text-xs tracking-wider">EMAIL</th>
                                 <th className="text-left px-6 py-4 font-bold text-gray-500 text-xs tracking-wider">ROLE</th>
                                 <th className="text-left px-6 py-4 font-bold text-gray-500 text-xs tracking-wider">PURCHASES</th>
-                                <th className="text-left px-6 py-4 font-bold text-gray-500 text-xs tracking-wider">SUBSCRIPTION</th>
                                 <th className="text-left px-6 py-4 font-bold text-gray-500 text-xs tracking-wider">JOINED</th>
                                 <th className="text-right px-6 py-4 font-bold text-gray-500 text-xs tracking-wider">ACTION</th>
                             </tr>
@@ -265,7 +252,6 @@ const UserManagement = () => {
                                         <td className="px-6 py-4"><div className="h-4 bg-gray-100 rounded w-40" /></td>
                                         <td className="px-6 py-4"><div className="h-6 bg-gray-100 rounded-full w-16" /></td>
                                         <td className="px-6 py-4"><div className="h-4 bg-gray-100 rounded w-8" /></td>
-                                        <td className="px-6 py-4"><div className="h-6 bg-gray-100 rounded-full w-20" /></td>
                                         <td className="px-6 py-4"><div className="h-4 bg-gray-100 rounded w-24" /></td>
                                         <td className="px-6 py-4"><div className="h-8 bg-gray-100 rounded-xl w-24 ml-auto" /></td>
                                     </tr>
@@ -295,11 +281,6 @@ const UserManagement = () => {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 font-bold text-gray-700">{user.purchasedDesigns?.length || 0}</td>
-                                        <td className="px-6 py-4">
-                                            <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-bold ${user.subscriptionStatus === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                                                {user.subscriptionStatus === 'active' ? `Active (${user.downloadsRemaining} left)` : 'None'}
-                                            </span>
-                                        </td>
                                         <td className="px-6 py-4 text-gray-400 font-medium text-xs">
                                             {new Date(user.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                                         </td>

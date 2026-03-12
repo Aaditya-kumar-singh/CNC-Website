@@ -39,17 +39,6 @@ const userSchema = new mongoose.Schema({
         ref: 'Design',
     }],
     stripeCustomerId: String,
-    stripeSubscriptionId: String,
-    subscriptionStatus: {
-        type: String,
-        enum: ['active', 'past_due', 'canceled', 'unpaid', 'none'],
-        default: 'none'
-    },
-    downloadsRemaining: {
-        type: Number,
-        default: 0
-    },
-    subscriptionPeriodEnd: Date,
     lastAbandonedCartEmailSentAt: Date,
     resetPasswordToken: String,
     resetPasswordExpire: Date,

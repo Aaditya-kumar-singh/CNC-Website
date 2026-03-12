@@ -21,7 +21,7 @@ const BundleDetails = () => {
         const fetchBundle = async () => {
             try {
                 const res = await getBundleById(id);
-                setBundle(res.data.bundle);
+                setBundle(res.bundle);
             } catch (error) {
                 toast.error('Failed to load bundle details');
             } finally {

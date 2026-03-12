@@ -21,7 +21,6 @@ import Category from './pages/Category';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import PaymentSuccess from './pages/PaymentSuccess';
-import Pricing from './pages/Pricing';
 import Bundles from './pages/Bundles';
 import BundleDetails from './pages/BundleDetails';
 import SEO from './components/SEO';
@@ -47,7 +46,6 @@ function App() {
               <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
               <Route path="/design/:id" element={<DesignDetails />} />
               <Route path="/category/:categoryId" element={<Category />} />
-              <Route path="/pricing" element={<Pricing />} />
               <Route path="/bundles" element={<Bundles />} />
               <Route path="/bundle/:id" element={<BundleDetails />} />
               <Route path="/forgot-password" element={<GuestRoute><ForgotPassword /></GuestRoute>} />

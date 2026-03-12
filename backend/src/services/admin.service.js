@@ -78,7 +78,7 @@ exports.getDashboardStats = async () => {
 };
 
 // ─── Get paginated user list (with advanced filters) ────────────────────────
-exports.getAllUsers = async ({ page = 1, limit = 20, search = '', role = '', subscription = '', sortBy = 'newest', dateFrom = '', dateTo = '' } = {}) => {
+exports.getAllUsers = async ({ page = 1, limit = 20, search = '', role = '', sortBy = 'newest', dateFrom = '', dateTo = '' } = {}) => {
     const query = {};
 
     // Text search on name or email
@@ -97,12 +97,7 @@ exports.getAllUsers = async ({ page = 1, limit = 20, search = '', role = '', sub
         query.role = role;
     }
 
-    // Subscription status filter
-    if (subscription === 'active') {
-        query.subscriptionStatus = 'active';
-    } else if (subscription === 'none') {
-        query.subscriptionStatus = { $ne: 'active' };
-    }
+
 
     // Date range filter on createdAt
     if (dateFrom || dateTo) {
@@ -134,11 +129,11 @@ exports.getAllUsers = async ({ page = 1, limit = 20, search = '', role = '', sub
             { $sort: { purchaseCount: -1 } },
             { $skip: (page - 1) * limit },
             { $limit: limit },
-            { $project: { name: 1, email: 1, role: 1, createdAt: 1, purchasedDesigns: 1, subscriptionStatus: 1, downloadsRemaining: 1 } }
+            { $project: { name: 1, email: 1, role: 1, createdAt: 1, purchasedDesigns: 1 } }
         ]);
     } else {
         usersQuery = User.find(query)
-            .select('name email role createdAt purchasedDesigns subscriptionStatus downloadsRemaining')
+            .select('name email role createdAt purchasedDesigns')
             .sort(sort)
             .skip((page - 1) * limit)
             .limit(limit)
