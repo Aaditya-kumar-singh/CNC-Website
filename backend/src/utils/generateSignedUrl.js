@@ -3,17 +3,16 @@ const logger = require('../config/logger');
 const cloudinary = require('../config/cloudinary');
 
 const getCloudinaryPrivateDownloadUrl = (fileKey, expiry) => {
-    const extensionWithDot = path.extname(fileKey || '');
-    const extension = extensionWithDot.replace('.', '').toLowerCase();
-    const publicId = fileKey.slice(0, -1 * extensionWithDot.length);
-
-    if (!extension || !publicId) {
+    if (!fileKey || !path.extname(fileKey || '')) {
         throw new Error('Invalid Cloudinary file key');
     }
 
     const expiresAt = Math.floor(Date.now() / 1000) + expiry;
 
-    return cloudinary.utils.private_download_url(publicId, extension, {
+    // Raw uploads are stored with the extension already embedded in public_id
+    // (for example: cnc/designs/uuid.dxf). Passing the extension separately
+    // causes Cloudinary to look up the wrong resource.
+    return cloudinary.utils.private_download_url(fileKey, undefined, {
         resource_type: 'raw',
         type: 'private',
         expires_at: expiresAt,
