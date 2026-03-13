@@ -2,6 +2,7 @@ const multer = require("multer");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const cloudinary = require("../config/cloudinary");
 const { v4: uuid } = require("uuid");
+const { CNC_FILE_EXTENSIONS } = require('../constants/design.constants');
 
 // Cloudinary storage for preview images
 const imageStorage = new CloudinaryStorage({
@@ -21,11 +22,10 @@ const hybridStorage = {
             imageStorage._handleFile(req, file, cb);
         } else {
             // Fix #5: validate CNC file type before buffering
-            const allowedCNCExtensions = ['.stl', '.dxf', '.svg', '.obj', '.nc', '.gcode', '.tap', '.ngc'];
             const path = require('path');
             const ext = path.extname(file.originalname || '').toLowerCase();
-            if (!allowedCNCExtensions.includes(ext)) {
-                return cb(new Error(`Invalid CNC file type "${ext}". Allowed: ${allowedCNCExtensions.join(', ')}`));
+            if (!CNC_FILE_EXTENSIONS.includes(ext)) {
+                return cb(new Error(`Invalid CNC file type "${ext}". Allowed: ${CNC_FILE_EXTENSIONS.join(', ')}`));
             }
 
             // Buffer to memory for R2 upload

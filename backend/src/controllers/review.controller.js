@@ -1,19 +1,14 @@
 const reviewService = require('../services/review.service');
 const { successResponse, errorResponse } = require('../utils/responseHandler');
+const validateWithZod = require('../utils/validateWithZod');
+const { objectIdSchema } = require('../validators/common.validator');
+const { createReviewSchema } = require('../validators/review.validator');
 
 exports.createReview = async (req, res) => {
     try {
-        const { rating, comment } = req.body;
-        const { designId } = req.params;
+        const { rating, comment } = validateWithZod(createReviewSchema, req.body);
+        const designId = validateWithZod(objectIdSchema, req.params.designId);
         const userId = req.user.id; // from auth middleware
-
-        if (!rating || !comment) {
-            return errorResponse(res, 400, 'Please provide both a rating and a comment.');
-        }
-
-        if (!designId || !designId.match(/^[0-9a-fA-F]{24}$/)) {
-            return errorResponse(res, 400, 'Invalid Design ID format');
-        }
 
         const review = await reviewService.createReview(userId, designId, rating, comment);
         return successResponse(res, 201, { message: 'Review created successfully', data: { review } });
@@ -28,11 +23,7 @@ exports.createReview = async (req, res) => {
 
 exports.getDesignReviews = async (req, res) => {
     try {
-        const { designId } = req.params;
-
-        if (!designId || !designId.match(/^[0-9a-fA-F]{24}$/)) {
-            return errorResponse(res, 400, 'Invalid Design ID format');
-        }
+        const designId = validateWithZod(objectIdSchema, req.params.designId);
 
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;

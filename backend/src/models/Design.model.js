@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { DESIGN_CATEGORIES } = require('../constants/design.constants');
 
 const designSchema = new mongoose.Schema({
     title: {
@@ -20,6 +21,10 @@ const designSchema = new mongoose.Schema({
     category: {
         type: String,
         required: [true, 'A design must have a category'],
+        enum: {
+            values: DESIGN_CATEGORIES,
+            message: 'Please select a valid category',
+        },
         trim: true,
         default: 'other' // A safe default for existing items
     },

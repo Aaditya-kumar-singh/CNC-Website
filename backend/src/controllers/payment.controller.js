@@ -1,15 +1,13 @@
 const Design = require('../models/Design.model');
 const { successResponse, errorResponse } = require('../utils/responseHandler');
 const paymentService = require('../services/payment.service');
+const validateWithZod = require('../utils/validateWithZod');
+const { createOrderSchema, verifyPaymentSchema } = require('../validators/payment.validator');
 
 // Create Razorpay order (Single or Multiple items)
 exports.createOrder = async (req, res, next) => {
     try {
-        const { designIds } = req.body;
-
-        if (!designIds || !Array.isArray(designIds) || designIds.length === 0) {
-            return errorResponse(res, 400, 'An array of designIds is required');
-        }
+        const { designIds } = validateWithZod(createOrderSchema, req.body);
 
         // Find designs
         const designs = await Design.find({ _id: { $in: designIds } });
@@ -38,11 +36,7 @@ exports.createOrder = async (req, res, next) => {
 // Verify Razorpay payment signature and fulfil order
 exports.verifyPayment = async (req, res, next) => {
     try {
-        const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
-
-        if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-            return errorResponse(res, 400, 'Missing payment verification details');
-        }
+        const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = validateWithZod(verifyPaymentSchema, req.body);
 
         const isVerified = await paymentService.verifyAndFulfillPayment(
             razorpay_order_id,

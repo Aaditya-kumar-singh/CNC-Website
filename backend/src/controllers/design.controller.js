@@ -1,6 +1,8 @@
 const { successResponse, errorResponse } = require('../utils/responseHandler');
 const designService = require('../services/design.service');
 const xss = require('xss');
+const validateWithZod = require('../utils/validateWithZod');
+const { createDesignSchema, updateDesignSchema } = require('../validators/design.validator');
 
 // Get all basic designs (public route)
 exports.getAllDesigns = async (req, res) => {
@@ -71,19 +73,12 @@ exports.createDesign = async (req, res) => {
     try {
         // ✅ XSS FIX: Sanitize text fields from multipart/form-data AFTER multer has parsed them.
         // The global xssSanitizer runs before multer, so req.body is empty at that point.
-        const title = xss((req.body.title || '').trim());
-        const description = xss((req.body.description || '').trim());
-        const category = xss((req.body.category || '').trim());
-        const price = req.body.price;
-
-        // Validation logic
-        if (!title || !description || price === undefined || !category) {
-            return errorResponse(res, 400, 'Please provide a title, description, category, and price.');
-        }
-
-        if (isNaN(Number(price)) || Number(price) < 0) {
-            return errorResponse(res, 400, 'Price must be a valid positive number.');
-        }
+        const validatedDesign = validateWithZod(createDesignSchema, {
+            title: xss(req.body.title || ''),
+            description: xss(req.body.description || ''),
+            category: xss(req.body.category || '').toLowerCase(),
+            price: req.body.price,
+        });
 
         if (!req.files || !req.files.preview || !req.files.cnc) {
             return errorResponse(res, 400, 'Please provide both a preview image and the CNC file.');
@@ -95,7 +90,7 @@ exports.createDesign = async (req, res) => {
 
         // Business logic execution
         const newDesign = await designService.createDesign(
-            { title, description, price, category },
+            validatedDesign,
             previewFile,
             cncFile,
             userId
@@ -134,25 +129,19 @@ exports.deleteDesign = async (req, res) => {
 // Update a design (Admin only)
 exports.updateDesign = async (req, res) => {
     try {
-        const { title, description, price, category } = req.body;
-
         // BUG FIX #5: No ObjectId validation on update endpoint
         if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
             return errorResponse(res, 404, 'Design not found');
         }
 
-        // BUG FIX #5 (cont.): Price validation existed at CREATE but not UPDATE.
-        // An admin could set a negative price via PATCH, breaking the cart total.
-        if (price !== undefined && (isNaN(Number(price)) || Number(price) < 0)) {
-            return errorResponse(res, 400, 'Price must be a valid non-negative number.');
-        }
-
-        const updatedDesign = await designService.updateDesign(req.params.id, {
-            ...(title && { title }),
-            ...(description && { description }),
-            ...(price !== undefined && { price: Number(price) }),
-            ...(category && { category }),
+        const validatedUpdate = validateWithZod(updateDesignSchema, {
+            ...(req.body.title !== undefined && { title: xss(req.body.title) }),
+            ...(req.body.description !== undefined && { description: xss(req.body.description) }),
+            ...(req.body.price !== undefined && { price: req.body.price }),
+            ...(req.body.category !== undefined && { category: xss(req.body.category).toLowerCase() }),
         });
+
+        const updatedDesign = await designService.updateDesign(req.params.id, validatedUpdate);
 
         if (!updatedDesign) {
             return errorResponse(res, 404, 'Design not found');

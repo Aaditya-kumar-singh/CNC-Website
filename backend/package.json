@@ -36,7 +36,8 @@
     "razorpay": "^2.9.6",
     "uuid": "^13.0.0",
     "winston": "^3.19.0",
-    "xss": "^1.0.15"
+    "xss": "^1.0.15",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "cross-env": "^10.1.0",
