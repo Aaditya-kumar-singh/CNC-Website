@@ -8,7 +8,7 @@ import { categoryGroups } from '../content/categories';
 const SUPPORTED_CNC_EXTENSIONS = ['dxf', 'stl', 'svg', 'obj', 'nc', 'gcode', 'tap', 'ngc', 'cmx', 'rlf', 'art'];
 const SUPPORTED_CNC_ACCEPT = SUPPORTED_CNC_EXTENSIONS.map((ext) => `.${ext}`).join(',');
 const MAX_PREVIEW_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
-const MAX_CNC_FILE_SIZE_BYTES = 35 * 1024 * 1024;
+const MAX_CNC_FILE_SIZE_BYTES = 30 * 1024 * 1024;
 const formatFileSize = (bytes) => `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 
 const UploadDesign = () => {
@@ -36,7 +36,7 @@ const UploadDesign = () => {
         }
 
         if (cncFile.size > MAX_CNC_FILE_SIZE_BYTES) {
-            toast.error(`CNC file is ${formatFileSize(cncFile.size)}. Max allowed is 35.00 MB.`);
+            toast.error(`CNC file is ${formatFileSize(cncFile.size)}. Max allowed is 30.00 MB.`);
             return;
         }
 
@@ -193,14 +193,14 @@ const UploadDesign = () => {
                                                 Selected: {cncFile.name} ({formatFileSize(cncFile.size)})
                                             </p>
                                         )}
-                                        <p className="text-xs text-gray-400 mt-4 leading-relaxed font-medium">Supported: DXF, STL, SVG, OBJ, NC, GCODE, TAP, NGC, CMX, RLF, ART. Max 35MB.</p>
+                                        <p className="text-xs text-gray-400 mt-4 leading-relaxed font-medium">Supported: DXF, STL, SVG, OBJ, NC, GCODE, TAP, NGC, CMX, RLF, ART. Max 30MB.</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <div className="mt-12 pt-8 border-t border-gray-100 flex items-center justify-between">
-                            <p className="text-xs text-gray-400 font-medium max-w-sm">By publishing, you agree to our creator terms. Files are securely distributed via Cloudflare R2.</p>
+                            <p className="text-xs text-gray-400 font-medium max-w-sm">By publishing, you agree to our creator terms. Preview images are stored on Cloudinary and CNC source files are stored securely on Appwrite.</p>
                             <button
                                 type="submit"
                                 disabled={loading}

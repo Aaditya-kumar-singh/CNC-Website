@@ -19,15 +19,15 @@ exports.getDownloadLink = async (req, res, next) => {
         }
 
         // 2. Business Logic Execution
-        const signedUrl = await downloadService.authorizeAndGenerateUrl(design, req.user);
+        const downloadData = await downloadService.authorizeAndGenerateUrl(design, req.user);
 
-        if (!signedUrl) {
+        if (!downloadData) {
             return errorResponse(res, 403, 'Please purchase this design to download');
         }
 
         successResponse(res, 200, {
             data: {
-                downloadUrl: signedUrl
+                ...downloadData
             }
         });
 

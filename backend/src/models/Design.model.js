@@ -31,7 +31,7 @@ const designSchema = new mongoose.Schema({
     previewImages: [String],
     fileKey: {
         type: String,
-        required: [true, 'Cloudinary file key for the source asset is required'],
+        required: [true, 'Source file key is required'],
         select: false, // Hide the real private asset key from default queries
     },
     uploadedBy: {

@@ -11,6 +11,7 @@ import toast from 'react-hot-toast';
 import NotFound from './NotFound';
 import placeholderImg from '../assets/wood_part_placeholder.png';
 import { categoryGroups } from '../content/categories';
+import { storage as appwriteStorage } from '../lib/appwrite';
 
 // Derive format label from fileKey extension
 const getFileFormat = (design) => {
@@ -116,10 +117,23 @@ const DesignDetails = () => {
         try {
             setProcessing(true);
             const data = await getDownloadLink(id);
+            let downloadHref = data.data.downloadUrl;
+
+            if (data.data.provider === 'appwrite') {
+                downloadHref = appwriteStorage.getFileDownload({
+                    bucketId: data.data.bucketId,
+                    fileId: data.data.fileId,
+                    token: data.data.token,
+                });
+            }
+
+            if (!downloadHref) {
+                throw new Error('Download link was not returned.');
+            }
 
             // Auto-download using signed URL
             const link = document.createElement('a');
-            link.href = data.data.downloadUrl;
+            link.href = downloadHref;
             link.download = design.title;
             link.rel = 'noopener noreferrer';
             document.body.appendChild(link);
@@ -390,6 +404,20 @@ const DesignDetails = () => {
                                 By <span className="font-bold text-black border-b border-black/20 pb-0.5">{design.uploadedBy?.name || 'Creator'}</span>
                             </p>
 
+                            <div className="flex items-center justify-between gap-4 mb-6 rounded-2xl bg-gray-50 border border-gray-100 px-5 py-4">
+                                <div>
+                                    <p className="text-xs font-black tracking-[0.18em] text-gray-400 uppercase">Price</p>
+                                    <p className="mt-1 text-2xl font-black text-gray-900">
+                                        <PriceTag price={design.price} />
+                                    </p>
+                                </div>
+                                {isOwner && design.price > 0 && (
+                                    <div className="rounded-full bg-blue-50 border border-blue-100 px-4 py-2 text-xs font-bold text-blue-700 text-center">
+                                        Your Upload
+                                    </div>
+                                )}
+                            </div>
+
                             <div className="text-gray-600 font-medium text-[15px] leading-relaxed mb-8 grow">
                                 {design.description || "Premium vector graphics and 3D reliefs perfectly generated and tested for wood CNC routing, carving, and laser engraving machines. Guaranteed clean toolpaths and smooth finishes."}
                             </div>
@@ -446,9 +474,9 @@ const DesignDetails = () => {
                                     >
                                         <div className="flex items-center gap-3">
                                             {processing ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <Download size={24} />}
-                                            <span>Download File</span>
+                                            <span>{isOwner ? 'Download Your Upload' : 'Download File'}</span>
                                         </div>
-                                        <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-bold tracking-wider">READY</span>
+                                        <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-bold tracking-wider">{isOwner ? 'OWNER' : 'READY'}</span>
                                     </button>
                                 ) : (
                                     <div className="flex flex-col gap-3">
@@ -481,6 +509,11 @@ const DesignDetails = () => {
                                 <p className="text-center font-medium text-xs text-gray-400 mt-6 flex items-center justify-center gap-1.5">
                                     <Clock size={14} /> Instant Access ??? Lifetime Download
                                 </p>
+                                {isOwner && design.price > 0 && (
+                                    <p className="text-center font-medium text-xs text-blue-600 mt-3">
+                                        This design is paid for customers, but you can download it directly because you uploaded it.
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>

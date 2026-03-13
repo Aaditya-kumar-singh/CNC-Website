@@ -1,6 +1,8 @@
 const path = require('path');
 const logger = require('../config/logger');
 const cloudinary = require('../config/cloudinary');
+const { configError, isConfigured, tokens } = require('../config/appwrite');
+const { parseAppwriteFileKey } = require('./fileStorageKey');
 
 const getCloudinaryPrivateDownloadUrl = (fileKey, expiry) => {
     if (!fileKey || !path.extname(fileKey || '')) {
@@ -20,6 +22,45 @@ const getCloudinaryPrivateDownloadUrl = (fileKey, expiry) => {
     });
 };
 
+const getAppwriteDownloadDescriptor = async (fileKey, expiry) => {
+    if (!isConfigured) {
+        throw new Error(configError || 'Appwrite storage is not configured on the backend.');
+    }
+
+    const parsed = parseAppwriteFileKey(fileKey);
+    if (!parsed) {
+        throw new Error('Invalid Appwrite file key');
+    }
+
+    const expire = new Date(Date.now() + (expiry * 1000)).toISOString();
+    let token;
+    try {
+        token = await tokens.createFileToken({
+            bucketId: parsed.bucketId,
+            fileId: parsed.fileId,
+            expire,
+        });
+    } catch (error) {
+        logger.error({
+            message: 'Error generating Appwrite download token',
+            error: error.message,
+            type: error.type,
+            code: error.code,
+            bucketId: parsed.bucketId,
+            fileId: parsed.fileId,
+            fileKey,
+        });
+        throw new Error(error.message || 'Failed to generate Appwrite download token');
+    }
+
+    return {
+        provider: 'appwrite',
+        bucketId: parsed.bucketId,
+        fileId: parsed.fileId,
+        token: token.secret,
+    };
+};
+
 const generateSignedUrl = async (fileKey) => {
     if (!fileKey || typeof fileKey !== 'string') {
         throw new Error('Invalid file key');
@@ -36,14 +77,24 @@ const generateSignedUrl = async (fileKey) => {
 
     const expiry = parseInt(process.env.SIGNED_URL_EXPIRY, 10) || 300;
 
+    if (sanitizedKey.startsWith('appwrite/')) {
+        return getAppwriteDownloadDescriptor(sanitizedKey, expiry);
+    }
+
     if (sanitizedKey.startsWith('cnc/designs/')) {
-        return getCloudinaryPrivateDownloadUrl(sanitizedKey, expiry);
+        return {
+            provider: 'direct-url',
+            downloadUrl: getCloudinaryPrivateDownloadUrl(sanitizedKey, expiry),
+        };
     }
 
     if (sanitizedKey.startsWith('local-designs/')) {
         const fileName = path.basename(sanitizedKey.replace('local-designs/', ''));
         const baseUrl = process.env.BACKEND_URL || 'http://localhost:5000';
-        return `${baseUrl}/uploads/designs/${fileName}`;
+        return {
+            provider: 'direct-url',
+            downloadUrl: `${baseUrl}/uploads/designs/${fileName}`,
+        };
     }
 
     logger.error({ message: 'Error generating signed URL', error: 'Unsupported file key origin', key: sanitizedKey });

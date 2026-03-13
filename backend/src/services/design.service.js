@@ -1,6 +1,6 @@
 const Design = require('../models/Design.model');
 const cloudinary = require('../config/cloudinary');
-const uploadToCloudinary = require('../utils/uploadToCloudinary');
+const uploadToAppwrite = require('../utils/uploadToAppwrite');
 
 // Get all active designs with populated user info, optionally filtered by category/search/sort/page
 exports.getAllDesigns = async ({ category, search, sort, page, limit, priceType, fileType } = {}) => {
@@ -58,7 +58,7 @@ exports.getDesignById = async (id) => {
     return await Design.findById(id).populate('uploadedBy', 'name');
 };
 
-// Create a new design: watermark the Cloudinary preview and store the CNC source file in Cloudinary private storage.
+// Create a new design: watermark the Cloudinary preview and store the CNC source file in Appwrite private storage.
 exports.createDesign = async (designData, previewFile, cncFile, userId) => {
     // Fix #2: safely get the Cloudinary public_id — filename is set by multer-storage-cloudinary
     const publicId = previewFile.filename || previewFile.public_id;
@@ -82,8 +82,8 @@ exports.createDesign = async (designData, previewFile, cncFile, userId) => {
         ]
     });
 
-    // Upload the protected source file to Cloudinary raw storage.
-    const fileKey = await uploadToCloudinary(
+    // Upload the protected source file to Appwrite storage.
+    const fileKey = await uploadToAppwrite(
         cncFile.buffer,
         cncFile.mimetype,
         cncFile.originalname

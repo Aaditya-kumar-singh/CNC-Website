@@ -31,6 +31,5 @@ exports.authorizeAndGenerateUrl = async (design, user) => {
     }
 
     // Generate Signed URL
-    const signedUrl = await generateSignedUrl(design.fileKey);
-    return signedUrl;
+    return generateSignedUrl(design.fileKey);
 };
