@@ -6,6 +6,7 @@ import { PackageOpen, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import placeholderImg from '../assets/wood_part_placeholder.png';
 import SEO from '../components/SEO';
+import { categoryDetails } from '../content/categories';
 
 const SkeletonCard = () => (
     <div className="animate-pulse bg-white rounded-3xl p-3 flex flex-col h-full shadow-sm border border-gray-100">
@@ -18,28 +19,6 @@ const SkeletonCard = () => (
         </div>
     </div>
 );
-
-const categoryDetails = {
-    'routers': { title: 'Wood Routers & Cutting', desc: 'Premium 2D and 3D paths configured for standard wood routing.' },
-    'spindles': { title: 'Spindle & Lathe Turning', desc: 'Intricate files generated for 4th axis and rotary turning.' },
-    'carvings': { title: '3D Carvings', desc: 'Beautiful high-resolution STL reliefs for intricate wood carving.' },
-    'furniture': { title: 'Furniture Plans', desc: 'Complete parametric DXF sets for flat-pack and solid wood furniture.' },
-    'reliefs': { title: 'Panel Reliefs', desc: 'Decorative wall panels, doors, and wainscoting designs.' },
-    'v-bits': { title: 'V-Bit Engraving', desc: 'Sharp, elegant vectors optimized specifically for V-bit grooving.' },
-    'other': { title: 'General Wood CNC', desc: 'Miscellaneous clamps, jigs, and workshop files.' },
-    // New Categories
-    '2d-designs': { title: '2D Designs', desc: 'High-quality 2D vector designs for laser cutting and CNC routing.' },
-    '2d-grill-designs': { title: '2D Grill Designs', desc: 'Intricate 2D grill patterns and jali designs.' },
-    '3d-designs': { title: '3D Designs', desc: 'Detailed 3D models and STL files for CNC carving.' },
-    '3d-traditional': { title: '3D Traditional Designs', desc: 'Classic traditional 3D patterns and motifs.' },
-    'temple-designs': { title: 'Temple Designs', desc: 'Sacred temple architecture and deity carvings.' },
-    '3d-doors-design': { title: '3D Doors Design', desc: 'Beautiful 3D door panel models.' },
-    '3d-modern-panel-doors': { title: '3D Modern Panel Doors', desc: 'Contemporary minimalist 3D panel door designs.' },
-    '3d-latest-panel-door': { title: '3D Latest Panel Door', desc: 'The newest trends in 3D panel door designs.' },
-    '3d-borderless-mdf-door': { title: '3D Borderless MDF Door', desc: 'Seamless borderless door designs optimized for MDF.' },
-    '3d-traditional-panel-door': { title: '3D Traditional Panel Door', desc: 'Classic vintage 3D panel door carvings.' },
-    '3d-unique-door': { title: '3D Unique Door', desc: 'One-of-a-kind bespoke 3D door models.' }
-};
 
 const getFileFormat = (design) => {
     if (!design.fileKey) return 'DXF';

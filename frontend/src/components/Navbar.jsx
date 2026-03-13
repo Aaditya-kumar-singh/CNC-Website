@@ -2,6 +2,7 @@ import React, { useState, useContext, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { LogOut, Upload, BarChart3, ShoppingBag, Heart, ShoppingCart, Menu, X, Search, ChevronDown } from 'lucide-react';
+import { categoryGroups } from '../content/categories';
 
 const Navbar = () => {
     const { user, logout } = useContext(AuthContext);
@@ -46,15 +47,9 @@ const Navbar = () => {
 
     const isHome = location.pathname === '/';
 
-    const categoryLinks = [
-        { name: '3D Designs', path: '/category/3d-designs' },
-        { name: '3D Doors Design', path: '/category/3d-doors-design' },
-        { name: '2D Grill Designs', path: '/category/2d-grill-designs' },
-        { name: '2D Designs', path: '/category/2d-designs' },
-        { name: '2D Door Designs', path: '/category/2d-door-designs' },
-        { name: 'Temple Designs', path: '/category/temple-designs' },
-        { name: '3D Traditional', path: '/category/3d-traditional' },
-    ];
+    const categoryLinks = categoryGroups.flatMap((group) =>
+        group.items.map((item) => ({ name: item.label, path: `/category/${item.value}`, group: group.title }))
+    );
 
     const mainNavLinks = [
         { name: 'HOME', path: '/' },
@@ -90,16 +85,23 @@ const Navbar = () => {
                             </button>
 
                             {categoriesOpen && (
-                                <div className="absolute top-full left-0 mt-4 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 py-3 z-50 overflow-hidden">
-                                    {categoryLinks.map((link) => (
-                                        <Link
-                                            key={link.path}
-                                            to={link.path}
-                                            onClick={() => setCategoriesOpen(false)}
-                                            className="block px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                                        >
-                                            {link.name}
-                                        </Link>
+                                <div className="absolute top-full left-0 mt-4 w-80 max-h-[70vh] overflow-y-auto bg-white rounded-2xl shadow-xl border border-gray-100 py-3 z-50">
+                                    {categoryGroups.map((group) => (
+                                        <div key={group.title} className="py-1">
+                                            <p className="px-5 pb-2 pt-2 text-[11px] font-black tracking-widest text-gray-400 uppercase">
+                                                {group.title}
+                                            </p>
+                                            {group.items.map((item) => (
+                                                <Link
+                                                    key={item.value}
+                                                    to={`/category/${item.value}`}
+                                                    onClick={() => setCategoriesOpen(false)}
+                                                    className="block px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                                >
+                                                    {item.label}
+                                                </Link>
+                                            ))}
+                                        </div>
                                     ))}
                                 </div>
                             )}
@@ -245,15 +247,20 @@ const Navbar = () => {
 
                         <div className="h-px bg-gray-100 my-3" />
                         <p className="text-[11px] font-black tracking-widest text-gray-400 px-3 mb-3">CATEGORIES</p>
-                        {categoryLinks.map((link) => (
-                            <Link
-                                key={link.path}
-                                to={link.path}
-                                onClick={() => setMobileOpen(false)}
-                                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-black transition-colors"
-                            >
-                                {link.name}
-                            </Link>
+                        {categoryGroups.map((group) => (
+                            <div key={group.title}>
+                                <p className="text-[11px] font-black tracking-widest text-gray-400 px-3 mb-2 mt-3 uppercase">{group.title}</p>
+                                {group.items.map((item) => (
+                                    <Link
+                                        key={item.value}
+                                        to={`/category/${item.value}`}
+                                        onClick={() => setMobileOpen(false)}
+                                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-black transition-colors"
+                                    >
+                                        {item.label}
+                                    </Link>
+                                ))}
+                            </div>
                         ))}
 
                         <div className="h-px bg-gray-100 my-3" />

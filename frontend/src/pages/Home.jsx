@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import heroImg from '../assets/wood_cnc_hero.png';
 import DesignCard from '../components/DesignCard';
 import SEO from '../components/SEO';
+import { categoryGroups } from '../content/categories';
 
 // Skeleton card
 const SkeletonCard = () => (
@@ -308,26 +309,29 @@ const Home = () => {
                     {/* Left Sidebar Filters */}
                     <div className="hidden lg:block w-[280px] shrink-0 bg-white p-6 rounded-3xl shadow-sm border border-gray-100 sticky top-28">
                         <h2 className="text-xl font-black text-gray-900 mb-6">Categories</h2>
-                        <ul className="space-y-3 font-medium text-gray-600 text-sm">
-                            <li><Link to="/" className="flex justify-between items-center text-blue-600 font-bold bg-blue-50 px-3 py-2 rounded-xl"><span>Show All Categories</span></Link></li>
-                            <li><Link to="/category/2d-designs" className="flex justify-between items-center hover:text-black px-3 py-2 rounded-xl hover:bg-gray-50"><span>2D Designs</span></Link></li>
-                            <li><Link to="/category/2d-grill-designs" className="flex justify-between items-center hover:text-black px-3 py-2 rounded-xl hover:bg-gray-50"><span>2D Grill Designs</span></Link></li>
-                            <li><Link to="/category/3d-designs" className="flex justify-between items-center hover:text-black px-3 py-2 rounded-xl hover:bg-gray-50"><span>3D Designs</span></Link></li>
-                            <li><Link to="/category/3d-traditional" className="flex justify-between items-center hover:text-black px-3 py-2 rounded-xl hover:bg-gray-50"><span>3D Traditional Designs</span></Link></li>
-                            <li><Link to="/category/temple-designs" className="flex justify-between items-center hover:text-black px-3 py-2 rounded-xl hover:bg-gray-50"><span>Temple Designs</span></Link></li>
-                            <li><Link to="/category/other" className="flex justify-between items-center hover:text-black px-3 py-2 rounded-xl hover:bg-gray-50"><span>Uncategorized</span></Link></li>
-
-                            <li className="pt-2">
-                                <Link to="/category/3d-doors-design" className="flex justify-between items-center hover:text-black px-3 py-2 rounded-xl hover:bg-gray-50"><span>3D Doors Design</span></Link>
-                                <ul className="pl-6 mt-2 space-y-2 border-l-2 border-gray-100 ml-4">
-                                    <li><Link to="/category/3d-modern-panel-doors" className="flex justify-between items-center hover:text-black px-2 py-1.5 rounded-lg hover:bg-gray-50"><span>3D Modern Panel Doors</span></Link></li>
-                                    <li><Link to="/category/3d-latest-panel-door" className="flex justify-between items-center hover:text-black px-2 py-1.5 rounded-lg hover:bg-gray-50"><span>3D Latest Panel Door</span></Link></li>
-                                    <li><Link to="/category/3d-borderless-mdf-door" className="flex justify-between items-center hover:text-black px-2 py-1.5 rounded-lg hover:bg-gray-50"><span>3D Borderless-MDF Door</span></Link></li>
-                                    <li><Link to="/category/3d-traditional-panel-door" className="flex justify-between items-center hover:text-black px-2 py-1.5 rounded-lg hover:bg-gray-50"><span>3D Traditional Panel Door</span></Link></li>
-                                    <li><Link to="/category/3d-unique-door" className="flex justify-between items-center hover:text-black px-2 py-1.5 rounded-lg hover:bg-gray-50"><span>3D Unique Door</span></Link></li>
-                                </ul>
-                            </li>
-                        </ul>
+                        <div className="space-y-6 font-medium text-gray-600 text-sm max-h-[70vh] overflow-y-auto pr-2">
+                            <Link to="/" className="flex justify-between items-center text-blue-600 font-bold bg-blue-50 px-3 py-2 rounded-xl">
+                                <span>Show All Categories</span>
+                            </Link>
+                            {categoryGroups.map((group) => (
+                                <div key={group.title}>
+                                    <p className="text-[11px] font-black tracking-widest text-gray-400 uppercase px-3 mb-2">
+                                        {group.title}
+                                    </p>
+                                    <div className="space-y-1">
+                                        {group.items.map((item) => (
+                                            <Link
+                                                key={item.value}
+                                                to={`/category/${item.value}`}
+                                                className="flex justify-between items-center hover:text-black px-3 py-2 rounded-xl hover:bg-gray-50"
+                                            >
+                                                <span>{item.label}</span>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
 
                     {/* Right Side Grid */}

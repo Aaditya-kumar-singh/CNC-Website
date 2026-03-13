@@ -23,6 +23,8 @@ import ResetPassword from './pages/ResetPassword';
 import PaymentSuccess from './pages/PaymentSuccess';
 import Bundles from './pages/Bundles';
 import BundleDetails from './pages/BundleDetails';
+import About from './pages/About';
+import Contact from './pages/Contact';
 import SEO from './components/SEO';
 import CookieConsent from './components/CookieConsent';
 import { useCookieConsent } from './hooks/useCookieConsent';
@@ -48,6 +50,8 @@ function App() {
               <Route path="/category/:categoryId" element={<Category />} />
               <Route path="/bundles" element={<Bundles />} />
               <Route path="/bundle/:id" element={<BundleDetails />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
               <Route path="/forgot-password" element={<GuestRoute><ForgotPassword /></GuestRoute>} />
               <Route path="/reset-password/:token" element={<GuestRoute><ResetPassword /></GuestRoute>} />
 

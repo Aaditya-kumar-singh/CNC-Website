@@ -10,6 +10,7 @@ import { Download, ShieldCheck, Clock, DownloadCloud, Trash2, CheckCircle2, Star
 import toast from 'react-hot-toast';
 import NotFound from './NotFound';
 import placeholderImg from '../assets/wood_part_placeholder.png';
+import { categoryGroups } from '../content/categories';
 
 // Derive format label from fileKey extension
 const getFileFormat = (design) => {
@@ -611,13 +612,13 @@ const DesignDetails = () => {
                                             onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
                                             className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-gray-900 capitalize"
                                         >
-                                            <option value="routers">Routers</option>
-                                            <option value="spindles">Spindles</option>
-                                            <option value="carvings">Carvings</option>
-                                            <option value="furniture">Furniture</option>
-                                            <option value="reliefs">Reliefs</option>
-                                            <option value="v-bits">V-Bits</option>
-                                            <option value="other">Other</option>
+                                            {categoryGroups.map((group) => (
+                                                <optgroup key={group.title} label={group.title}>
+                                                    {group.items.map((item) => (
+                                                        <option key={item.value} value={item.value}>{item.label}</option>
+                                                    ))}
+                                                </optgroup>
+                                            ))}
                                         </select>
                                     </div>
                                     <div>

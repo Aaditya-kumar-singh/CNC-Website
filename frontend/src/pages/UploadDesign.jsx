@@ -3,12 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { uploadDesign } from '../services/design.service';
 import toast from 'react-hot-toast';
 import { UploadCloud, CheckCircle2 } from 'lucide-react';
+import { categoryGroups } from '../content/categories';
+
+const SUPPORTED_CNC_EXTENSIONS = ['dxf', 'stl', 'svg', 'obj', 'nc', 'gcode', 'tap', 'ngc', 'cmx', 'rlf', 'art'];
+const SUPPORTED_CNC_ACCEPT = SUPPORTED_CNC_EXTENSIONS.map((ext) => `.${ext}`).join(',');
 
 const UploadDesign = () => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [price, setPrice] = useState(0);
-    const [category, setCategory] = useState('routers');
+    const [category, setCategory] = useState('3d-designs');
     const [previewFile, setPreviewFile] = useState(null);
     const [cncFile, setCncFile] = useState(null);
 
@@ -30,6 +34,12 @@ const UploadDesign = () => {
 
         if (cncFile.size > 50 * 1024 * 1024) {
             toast.error('CNC file must be less than 50MB');
+            return;
+        }
+
+        const fileExtension = cncFile.name.split('.').pop()?.toLowerCase();
+        if (!fileExtension || !SUPPORTED_CNC_EXTENSIONS.includes(fileExtension)) {
+            toast.error(`Unsupported CNC file type. Allowed: ${SUPPORTED_CNC_EXTENSIONS.map((ext) => ext.toUpperCase()).join(', ')}`);
             return;
         }
 
@@ -112,24 +122,13 @@ const UploadDesign = () => {
                                             required
                                             className="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-gray-900"
                                         >
-                                            <option value="routers">Wood Routers</option>
-                                            <option value="spindles">Spindles & Turning</option>
-                                            <option value="carvings">3D Carvings / Bas Reliefs</option>
-                                            <option value="furniture">Furniture Plans</option>
-                                            <option value="reliefs">Panel Reliefs</option>
-                                            <option value="v-bits">V-Bit Engraving</option>
-                                            <option value="2d-designs">2D Designs</option>
-                                            <option value="2d-grill-designs">2D Grill Designs</option>
-                                            <option value="3d-designs">3D Designs</option>
-                                            <option value="3d-traditional">3D Traditional Designs</option>
-                                            <option value="temple-designs">Temple Designs</option>
-                                            <option value="3d-doors-design">3D Doors Design</option>
-                                            <option value="3d-modern-panel-doors">3D Modern Panel Doors</option>
-                                            <option value="3d-latest-panel-door">3D Latest Panel Door</option>
-                                            <option value="3d-borderless-mdf-door">3D Borderless MDF Door</option>
-                                            <option value="3d-traditional-panel-door">3D Traditional Panel Door</option>
-                                            <option value="3d-unique-door">3D Unique Door</option>
-                                            <option value="other">Other / General</option>
+                                            {categoryGroups.map((group) => (
+                                                <optgroup key={group.title} label={group.title}>
+                                                    {group.items.map((item) => (
+                                                        <option key={item.value} value={item.value}>{item.label}</option>
+                                                    ))}
+                                                </optgroup>
+                                            ))}
                                         </select>
                                     </div>
 
@@ -176,12 +175,12 @@ const UploadDesign = () => {
                                         <label className="block text-sm font-bold text-gray-900 mb-3 cursor-pointer">CNC Source File</label>
                                         <input
                                             type="file"
-                                            accept=".dxf,.stl,.svg,.obj,.nc,.gcode,.tap,.ngc"
+                                            accept={SUPPORTED_CNC_ACCEPT}
                                             onChange={(e) => setCncFile(e.target.files[0])}
                                             required
                                             className="w-full text-sm font-medium text-gray-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-purple-600 file:text-white hover:file:bg-purple-700 cursor-pointer"
                                         />
-                                        <p className="text-xs text-gray-400 mt-4 leading-relaxed font-medium">Supported: DXF, STL, SVG, OBJ, NC, GCODE. Max 50MB.</p>
+                                        <p className="text-xs text-gray-400 mt-4 leading-relaxed font-medium">Supported: DXF, STL, SVG, OBJ, NC, GCODE, TAP, NGC, CMX, RLF, ART. Max 50MB.</p>
                                     </div>
                                 </div>
                             </div>
