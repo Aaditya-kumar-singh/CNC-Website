@@ -120,13 +120,13 @@ const DesignDetails = () => {
             // Auto-download using signed URL
             const link = document.createElement('a');
             link.href = data.data.downloadUrl;
-            link.target = '_blank';
             link.download = design.title;
+            link.rel = 'noopener noreferrer';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
 
-            toast.success('Download started! Link valid for 5 minutes.'); // Fix #1: was "60 seconds"
+            toast.success('Download started.');
         } catch (error) {
             toast.error(error.message || 'Download failed');
         } finally {
@@ -227,6 +227,12 @@ const DesignDetails = () => {
 
         try {
             setProcessing(true);
+            const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+            if (!razorpayKey) {
+                toast.error('Razorpay key is not configured.');
+                return;
+            }
+
             const isLoaded = await loadRazorpayScript();
 
             if (!isLoaded) {
@@ -238,7 +244,7 @@ const DesignDetails = () => {
             const orderData = await createOrder([id]);
 
             const options = {
-                key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'dummy_key', // From env config
+                key: razorpayKey,
                 amount: orderData.order.amount,
                 currency: "INR",
                 name: "CNC Market",

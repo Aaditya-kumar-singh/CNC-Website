@@ -4,10 +4,16 @@ const Order = require('../models/Order.model');
 const User = require('../models/User.model');
 
 exports.createRazorpayOrder = async (designs, userId) => {
-    // Collect IDs
-    const designIds = designs.map(d => d._id);
+    const ownedDesignIds = designs
+        .filter((design) => design.uploadedBy?.toString() === userId.toString())
+        .map((design) => design._id.toString());
 
-    // Guard: prevent buying designs already purchased
+    if (ownedDesignIds.length > 0) {
+        throw new Error('You cannot purchase your own design.');
+    }
+
+    const designIds = designs.map((design) => design._id);
+
     const alreadyPurchasedCount = await Order.countDocuments({
         userId,
         designIds: { $in: designIds },
@@ -18,21 +24,19 @@ exports.createRazorpayOrder = async (designs, userId) => {
         throw new Error('You have already purchased one or more of these designs.');
     }
 
-    // Calculate total amount
     const totalAmount = designs.reduce((sum, design) => sum + design.price, 0);
 
     const options = {
-        amount: Math.round(totalAmount * 100), // Amount in paise
+        amount: Math.round(totalAmount * 100),
         currency: 'INR',
         receipt: `rcpt_${Date.now()}`
     };
 
     const order = await razorpay.orders.create(options);
 
-    // Save order in DB (pending)
     await Order.create({
-        userId: userId,
-        designIds: designIds,
+        userId,
+        designIds,
         amount: totalAmount,
         orderId: order.id
     });
@@ -41,40 +45,40 @@ exports.createRazorpayOrder = async (designs, userId) => {
 };
 
 exports.verifyAndFulfillPayment = async (orderId, paymentId, signature, userId) => {
-    const sign = orderId + '|' + paymentId;
+    const sign = `${orderId}|${paymentId}`;
     const expectedSign = crypto
         .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-        .update(sign.toString())
+        .update(sign)
         .digest('hex');
 
-    if (signature === expectedSign) {
-        // Payment Successful — update order status
-        const order = await Order.findOneAndUpdate(
-            { orderId: orderId },
-            { paymentStatus: 'success', paymentId: paymentId },
-            { new: true }
-        );
-
-        if (order) {
-            // ✅ SECURITY: Cross-check that this order was created by the requesting user.
-            if (order.userId.toString() !== userId.toString()) {
-                throw new Error('Unauthorized: This order does not belong to you.');
-            }
-
-            // Add designs to user library and clear cart
-            await User.findByIdAndUpdate(userId, {
-                $addToSet: { purchasedDesigns: { $each: order.designIds } },
-                $set: { cart: [] }
-            });
-        }
-
-        return true;
-    } else {
-        // Payment Failed — invalid signature
+    if (signature !== expectedSign) {
         await Order.findOneAndUpdate(
-            { orderId: orderId },
-            { paymentStatus: 'failed', paymentId: paymentId }
+            { orderId },
+            { paymentStatus: 'failed', paymentId }
         );
         return false;
     }
+
+    const order = await Order.findOne({ orderId });
+
+    if (!order) {
+        throw new Error('Unauthorized: Order not found.');
+    }
+
+    if (order.userId.toString() !== userId.toString()) {
+        throw new Error('Unauthorized: This order does not belong to you.');
+    }
+
+    if (order.paymentStatus !== 'success') {
+        order.paymentStatus = 'success';
+        order.paymentId = paymentId;
+        await order.save();
+
+        await User.findByIdAndUpdate(userId, {
+            $addToSet: { purchasedDesigns: { $each: order.designIds } },
+            $pull: { cart: { $in: order.designIds } }
+        });
+    }
+
+    return true;
 };

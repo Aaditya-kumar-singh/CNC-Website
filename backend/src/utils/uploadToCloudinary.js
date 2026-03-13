@@ -2,6 +2,7 @@ const cloudinary = require("../config/cloudinary");
 const { v4: uuid } = require("uuid");
 const stream = require("stream");
 const path = require("path");
+const logger = require('../config/logger');
 
 module.exports = async (fileBuffer, mimeType, originalName) => {
     return new Promise((resolve, reject) => {
@@ -21,8 +22,15 @@ module.exports = async (fileBuffer, mimeType, originalName) => {
             },
             (error, result) => {
                 if (error) {
-                    console.error("Cloudinary upload error:", error);
-                    return reject(new Error('Failed to upload file to Cloudinary'));
+                    logger.error({
+                        message: 'Cloudinary upload error',
+                        error: error.message,
+                        http_code: error.http_code,
+                        name: originalName,
+                        ext,
+                        mimeType,
+                    });
+                    return reject(new Error(`Cloudinary upload failed: ${error.message}`));
                 }
 
                 // Return the public_id representing the file in Cloudinary

@@ -26,7 +26,10 @@ exports.createOrder = async (req, res, next) => {
 
         successResponse(res, 200, { order });
     } catch (error) {
-        if (error.message === 'You have already purchased one or more of these designs.') {
+        if (
+            error.message === 'You have already purchased one or more of these designs.' ||
+            error.message === 'You cannot purchase your own design.'
+        ) {
             return errorResponse(res, 400, error.message);
         }
         next(error);
