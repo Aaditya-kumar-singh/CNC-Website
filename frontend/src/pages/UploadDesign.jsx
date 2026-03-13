@@ -7,6 +7,8 @@ import { categoryGroups } from '../content/categories';
 
 const SUPPORTED_CNC_EXTENSIONS = ['dxf', 'stl', 'svg', 'obj', 'nc', 'gcode', 'tap', 'ngc', 'cmx', 'rlf', 'art'];
 const SUPPORTED_CNC_ACCEPT = SUPPORTED_CNC_EXTENSIONS.map((ext) => `.${ext}`).join(',');
+const MAX_PREVIEW_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
+const MAX_CNC_FILE_SIZE_BYTES = 35 * 1024 * 1024;
 const formatFileSize = (bytes) => `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 
 const UploadDesign = () => {
@@ -28,13 +30,13 @@ const UploadDesign = () => {
             return;
         }
 
-        if (previewFile.size > 2 * 1024 * 1024) {
+        if (previewFile.size > MAX_PREVIEW_IMAGE_SIZE_BYTES) {
             toast.error(`Preview image is ${formatFileSize(previewFile.size)}. Max allowed is 2.00 MB.`);
             return;
         }
 
-        if (cncFile.size > 50 * 1024 * 1024) {
-            toast.error(`CNC file is ${formatFileSize(cncFile.size)}. Max allowed is 50.00 MB.`);
+        if (cncFile.size > MAX_CNC_FILE_SIZE_BYTES) {
+            toast.error(`CNC file is ${formatFileSize(cncFile.size)}. Max allowed is 35.00 MB.`);
             return;
         }
 
@@ -191,7 +193,7 @@ const UploadDesign = () => {
                                                 Selected: {cncFile.name} ({formatFileSize(cncFile.size)})
                                             </p>
                                         )}
-                                        <p className="text-xs text-gray-400 mt-4 leading-relaxed font-medium">Supported: DXF, STL, SVG, OBJ, NC, GCODE, TAP, NGC, CMX, RLF, ART. Max 50MB.</p>
+                                        <p className="text-xs text-gray-400 mt-4 leading-relaxed font-medium">Supported: DXF, STL, SVG, OBJ, NC, GCODE, TAP, NGC, CMX, RLF, ART. Max 35MB.</p>
                                     </div>
                                 </div>
                             </div>

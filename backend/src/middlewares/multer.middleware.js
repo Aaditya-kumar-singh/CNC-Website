@@ -3,6 +3,7 @@ const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('../config/cloudinary');
 const { v4: uuid } = require('uuid');
 const { CNC_FILE_EXTENSIONS } = require('../constants/design.constants');
+const { MAX_CNC_FILE_SIZE_BYTES } = require('../constants/upload.constants');
 
 const imageStorage = new CloudinaryStorage({
     cloudinary,
@@ -51,7 +52,7 @@ const hybridStorage = {
 const upload = multer({
     storage: hybridStorage,
     limits: {
-        fileSize: 50 * 1024 * 1024
+        fileSize: MAX_CNC_FILE_SIZE_BYTES
     }
 });
 

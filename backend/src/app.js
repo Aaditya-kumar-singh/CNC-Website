@@ -7,6 +7,7 @@ const hpp = require('hpp');
 const path = require('path');
 const compression = require('compression');
 const logger = require('./config/logger');
+const { MAX_CNC_FILE_SIZE_BYTES } = require('./constants/upload.constants');
 
 const xssSanitizer = require('./middlewares/sanitize.middleware');
 const { limiter } = require('./middlewares/rateLimit.middleware');
@@ -155,7 +156,7 @@ app.use((err, req, res, next) => {
     // Multer file size exceeded
     if (err.code === 'LIMIT_FILE_SIZE') {
         statusCode = 400;
-        message = 'File is too large. Max allowed size is 50MB.';
+        message = `File is too large. Max allowed size is ${Math.round(MAX_CNC_FILE_SIZE_BYTES / (1024 * 1024))}MB.`;
     }
 
     // Mongoose Bad ObjectId
