@@ -1,5 +1,6 @@
-import React, { createContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useCallback, useRef } from 'react';
 import * as authService from '../services/auth.service';
+import { AUTH_STATUS_EVENT } from '../services/api';
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext();
@@ -7,8 +8,14 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const isRefreshingRef = useRef(false);
 
     const refreshUser = useCallback(async () => {
+        if (isRefreshingRef.current) {
+            return;
+        }
+
+        isRefreshingRef.current = true;
         try {
             const data = await authService.getMe();
             setUser(data.data.user);
@@ -19,6 +26,8 @@ export const AuthProvider = ({ children }) => {
             }
 
             throw error;
+        } finally {
+            isRefreshingRef.current = false;
         }
     }, []);
 
@@ -26,6 +35,19 @@ export const AuthProvider = ({ children }) => {
         refreshUser()
             .catch(() => null)
             .finally(() => setLoading(false));
+    }, [refreshUser]);
+
+    useEffect(() => {
+        const handleAuthStatusChanged = async () => {
+            try {
+                await refreshUser();
+            } catch (_error) {
+                // Non-auth failures should not break the app shell.
+            }
+        };
+
+        window.addEventListener(AUTH_STATUS_EVENT, handleAuthStatusChanged);
+        return () => window.removeEventListener(AUTH_STATUS_EVENT, handleAuthStatusChanged);
     }, [refreshUser]);
 
     const login = async (email, password) => {
