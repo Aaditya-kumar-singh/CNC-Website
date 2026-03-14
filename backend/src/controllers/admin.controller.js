@@ -28,4 +28,30 @@ exports.getUsers = async (req, res, next) => {
     }
 };
 
+exports.updateSellerTier = async (req, res, next) => {
+    try {
+        const { userId } = req.params;
+        const { tier } = req.body;
+        
+        if (!tier) {
+            return res.status(400).json({ message: 'Seller tier is required' });
+        }
+        
+        const user = await adminService.updateSellerTier(userId, tier);
+        successResponse(res, 200, { message: 'Seller tier updated successfully', user });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.getSellerStats = async (req, res, next) => {
+    try {
+        const { sellerId } = req.params;
+        const stats = await adminService.getSellerStats(sellerId);
+        successResponse(res, 200, stats);
+    } catch (error) {
+        next(error);
+    }
+};
+
 

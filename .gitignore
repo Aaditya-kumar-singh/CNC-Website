@@ -1,11 +1,13 @@
 # Dependencies
 node_modules/
 
-# Environment variables — NEVER commit these
-.env
-.env.local
-.env.production
-.env.staging
+# Environment variables - NEVER commit these
+**/.env
+**/.env.local
+**/.env.development
+**/.env.production
+**/.env.staging
+!**/.env.example
 
 # Build outputs
 dist/

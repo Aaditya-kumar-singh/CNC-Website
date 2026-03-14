@@ -29,8 +29,8 @@ const Navbar = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const handleLogout = () => {
-        logout();
+    const handleLogout = async () => {
+        await logout();
         setMobileOpen(false);
         setProfileOpen(false);
         navigate('/');
@@ -46,10 +46,6 @@ const Navbar = () => {
     };
 
     const isHome = location.pathname === '/';
-
-    const categoryLinks = categoryGroups.flatMap((group) =>
-        group.items.map((item) => ({ name: item.label, path: `/category/${item.value}`, group: group.title }))
-    );
 
     const mainNavLinks = [
         { name: 'HOME', path: '/' },

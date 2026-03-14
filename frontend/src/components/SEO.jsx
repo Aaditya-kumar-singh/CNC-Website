@@ -9,8 +9,7 @@ const SEO = ({
     image = "https://www.cncmarket.in/og-image.jpg",
     keywords = "CNC designs, SVG files, STL models, DXF files, laser cutting, 3D printing, digital designs, CNC patterns",
     canonicalUrl,
-    noindex = false,
-    articleMeta = null
+    noindex = false
 }) => {
     const currentUrl = canonicalUrl || url;
     

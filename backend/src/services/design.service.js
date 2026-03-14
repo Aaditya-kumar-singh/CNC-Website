@@ -1,6 +1,8 @@
 const Design = require('../models/Design.model');
+const Review = require('../models/Review.model');
 const cloudinary = require('../config/cloudinary');
 const uploadToAppwrite = require('../utils/uploadToAppwrite');
+const serializeDesign = require('../utils/serializeDesign');
 
 // Get all active designs with populated user info, optionally filtered by category/search/sort/page
 exports.getAllDesigns = async ({ category, search, sort, page, limit, priceType, fileType } = {}) => {
@@ -44,18 +46,69 @@ exports.getAllDesigns = async ({ category, search, sort, page, limit, priceType,
 
     const total = await Design.countDocuments(filter);
     const designs = await Design.find(filter)
-        .populate('uploadedBy', 'name')
+        .populate('uploadedBy', 'name sellerTier totalSales averageRating')
         .select('+fileKey')  // Include fileKey so frontend can show correct format badge
         .sort(sortOption)
         .skip(skip)
         .limit(limitNum);
 
-    return { designs, total, page: pageNum, pages: Math.ceil(total / limitNum) };
+    // Get review stats for each design
+    const designIds = designs.map(d => d._id);
+    const reviewStats = await Review.aggregate([
+        { $match: { design: { $in: designIds } } },
+        { $group: { 
+            _id: '$design', 
+            avgRating: { $avg: '$rating' },
+            count: { $sum: 1 }
+        }}
+    ]);
+
+    const statsMap = Object.fromEntries(
+        reviewStats.map(r => [r._id.toString(), { avgRating: r.avgRating, count: r.count }])
+    );
+
+    // Attach review stats to designs
+    const designsWithReviews = designs.map(design => {
+        const stats = statsMap[design._id.toString()] || { avgRating: 0, count: 0 };
+        return {
+            ...serializeDesign(design),
+            avgRating: stats.avgRating,
+            reviewCount: stats.count
+        };
+    });
+
+    return { designs: designsWithReviews, total, page: pageNum, pages: Math.ceil(total / limitNum) };
 };
 
 // Get a single design by ID with populated user info
 exports.getDesignById = async (id) => {
-    return await Design.findById(id).populate('uploadedBy', 'name');
+    const design = await Design.findById(id)
+        .select('+fileKey')
+        .populate('uploadedBy', 'name sellerTier totalSales averageRating');
+    
+    if (!design) return null;
+
+    // Get review stats
+    const reviewStats = await Review.aggregate([
+        { $match: { design: design._id } },
+        { $group: { 
+            _id: null, 
+            avgRating: { $avg: '$rating' },
+            count: { $sum: 1 }
+        }}
+    ]);
+
+    const stats = reviewStats[0] || { avgRating: 0, count: 0 };
+
+    return {
+        ...serializeDesign(design),
+        avgRating: stats.avgRating,
+        reviewCount: stats.count
+    };
+};
+
+exports.getDesignDocumentById = async (id) => {
+    return await Design.findById(id);
 };
 
 // Create a new design: watermark the Cloudinary preview and store the CNC source file in Appwrite private storage.
@@ -124,7 +177,7 @@ exports.softDeleteDesign = async (design) => {
 
 // Get related designs by category
 exports.getRelatedDesigns = async (designId, category, limit = 4) => {
-    return await Design.find({
+    const relatedDesigns = await Design.find({
         category: category,
         _id: { $ne: designId },
         isActive: true
@@ -132,4 +185,6 @@ exports.getRelatedDesigns = async (designId, category, limit = 4) => {
         .populate('uploadedBy', 'name')
         .select('+fileKey -__v')
         .limit(limit);
+
+    return relatedDesigns.map(serializeDesign);
 };

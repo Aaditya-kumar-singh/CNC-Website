@@ -64,6 +64,7 @@ const Footer = () => {
                         <div className="flex flex-col gap-3">
                             <Link to="/about" className="text-gray-500 hover:text-black font-medium text-[15px] transition-colors">About Us</Link>
                             <Link to="/contact" className="text-gray-500 hover:text-black font-medium text-[15px] transition-colors">Contact Support</Link>
+                            <Link to="/buyer-protection" className="text-gray-500 hover:text-black font-medium text-[15px] transition-colors">Buyer Protection</Link>
                             <a href={companyInfo.instagram} target="_blank" rel="noreferrer" className="text-gray-500 hover:text-black font-medium text-[15px] transition-colors">Instagram</a>
                             <a href={companyInfo.facebook} target="_blank" rel="noreferrer" className="text-gray-500 hover:text-black font-medium text-[15px] transition-colors">Facebook</a>
                             <button
@@ -76,7 +77,48 @@ const Footer = () => {
                     </div>
                 </div>
 
-                <div className="mt-16 pt-8 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 text-gray-400 font-medium text-sm">
+                {/* Trust & Security Badges */}
+                <div className="mt-12 p-6 bg-gray-50 rounded-2xl">
+                    <p className="text-center text-sm font-semibold text-gray-500 mb-4 uppercase tracking-wider">Trusted & Secure Payments</p>
+                    <div className="flex flex-wrap justify-center items-center gap-6 md:gap-8">
+                        <div className="flex items-center gap-2 text-gray-600">
+                            <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                <path d="M9 12l2 2 4-4"/>
+                            </svg>
+                            <span className="text-xs font-bold">SSL Secured</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-600">
+                            <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                            </svg>
+                            <span className="text-xs font-bold">Razorpay</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-600">
+                            <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                            <span className="text-xs font-bold">Verified Sellers</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-600">
+                            <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                <polyline points="9 22 9 12 15 12 15 22"/>
+                            </svg>
+                            <Link to="/buyer-protection" className="text-xs font-bold hover:text-blue-600">Buyer Protection</Link>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-600">
+                            <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            <span className="text-xs font-bold">Quality Guaranteed</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mt-8 pt-8 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 text-gray-400 font-medium text-sm">
                     <p>&copy; {new Date().getFullYear()} CNC Market. All rights reserved. Premium Marketplace for Router and Laser Cutters.</p>
                     <div className="flex items-center gap-6">
                         <a href={companyInfo.instagram} target="_blank" rel="noreferrer" className="hover:text-black transition-colors inline-flex items-center gap-2">

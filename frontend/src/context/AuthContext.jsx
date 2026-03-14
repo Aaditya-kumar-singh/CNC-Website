@@ -8,32 +8,24 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Fetch fresh user data from API (includes updated purchasedDesigns)
     const refreshUser = useCallback(async () => {
         try {
             const data = await authService.getMe();
-            const freshUser = data.data.user;
-            setUser(freshUser);
-            localStorage.setItem('user', JSON.stringify(freshUser));
+            setUser(data.data.user);
         } catch (error) {
-            // Fix #6: only wipe session on explicit 401 (bad/expired token)
-            // Network timeouts or 5xx errors should NOT log the user out
             if (error.status === 401) {
-                authService.logout();
                 setUser(null);
+                return;
             }
-            // Otherwise: silently keep the existing user state — they'll be challenged again on the next protected API call
+
+            throw error;
         }
     }, []);
 
-    // On app boot: if token exists, verify it and get fresh user data
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            refreshUser().finally(() => setLoading(false));
-        } else {
-            setLoading(false);
-        }
+        refreshUser()
+            .catch(() => null)
+            .finally(() => setLoading(false));
     }, [refreshUser]);
 
     const login = async (email, password) => {
@@ -42,7 +34,6 @@ export const AuthProvider = ({ children }) => {
             setUser(data.data.user);
             return data;
         } catch (error) {
-            // Normalize error message from axios response
             const message = error.response?.data?.error || error.message || 'Login failed';
             throw new Error(message);
         }
@@ -59,9 +50,12 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const logout = () => {
-        authService.logout();
-        setUser(null);
+    const logout = async () => {
+        try {
+            await authService.logout();
+        } finally {
+            setUser(null);
+        }
     };
 
     return (

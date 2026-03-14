@@ -36,10 +36,9 @@ describe('Auth Service', () => {
                 _id: 'user123',
                 email: 'john@example.com',
                 password: 'hashedPassword',
-                comparePassword: jest.fn().mockResolvedValue(true) // Simulating correct pwd
+                comparePassword: jest.fn().mockResolvedValue(true)
             };
 
-            // Setting up chainable mock queries
             const mockSelect = jest.fn().mockResolvedValue(mockUser);
             User.findOne.mockReturnValue({ select: mockSelect });
 
@@ -65,7 +64,7 @@ describe('Auth Service', () => {
                 _id: 'user123',
                 email: 'john@example.com',
                 password: 'hashedPassword',
-                comparePassword: jest.fn().mockResolvedValue(false) // Validation fails
+                comparePassword: jest.fn().mockResolvedValue(false)
             };
 
             const mockSelect = jest.fn().mockResolvedValue(mockUser);
@@ -78,19 +77,17 @@ describe('Auth Service', () => {
     });
 
     describe('getUserProfile', () => {
-        it('should return a user with populated purchasedDesigns', async () => {
+        it('should return a user by id', async () => {
             const mockUser = {
                 _id: 'user123',
                 purchasedDesigns: ['design1', 'design2']
             };
 
-            const mockPopulate = jest.fn().mockResolvedValue(mockUser);
-            User.findById.mockReturnValue({ populate: mockPopulate });
+            User.findById.mockResolvedValue(mockUser);
 
             const result = await authService.getUserProfile('user123');
 
             expect(User.findById).toHaveBeenCalledWith('user123');
-            expect(mockPopulate).toHaveBeenCalledWith('purchasedDesigns');
             expect(result).toEqual(mockUser);
         });
     });

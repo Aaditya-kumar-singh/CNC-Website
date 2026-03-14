@@ -4,19 +4,16 @@ const paymentService = require('../services/payment.service');
 const validateWithZod = require('../utils/validateWithZod');
 const { createOrderSchema, verifyPaymentSchema } = require('../validators/payment.validator');
 
-// Create Razorpay order (Single or Multiple items)
 exports.createOrder = async (req, res, next) => {
     try {
         const { designIds } = validateWithZod(createOrderSchema, req.body);
 
-        // Find designs
         const designs = await Design.find({ _id: { $in: designIds } });
         if (designs.length !== designIds.length) {
             return errorResponse(res, 404, 'One or more designs not found');
         }
 
-        // Filter out any free designs
-        const chargeableDesigns = designs.filter(d => d.price > 0);
+        const chargeableDesigns = designs.filter((design) => design.price > 0);
 
         if (chargeableDesigns.length === 0) {
             return errorResponse(res, 400, 'No chargeable designs in request. Use direct download for free designs.');
@@ -36,7 +33,6 @@ exports.createOrder = async (req, res, next) => {
     }
 };
 
-// Verify Razorpay payment signature and fulfil order
 exports.verifyPayment = async (req, res, next) => {
     try {
         const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = validateWithZod(verifyPaymentSchema, req.body);
@@ -50,13 +46,37 @@ exports.verifyPayment = async (req, res, next) => {
 
         if (isVerified) {
             return successResponse(res, 200, { message: 'Payment verified successfully' });
-        } else {
-            return errorResponse(res, 400, 'Invalid signature. Payment failed');
         }
+
+        return errorResponse(res, 400, 'Invalid signature. Payment failed');
     } catch (error) {
         if (error.message && error.message.startsWith('Unauthorized')) {
             return errorResponse(res, 403, error.message);
         }
+        next(error);
+    }
+};
+
+exports.handleWebhook = async (req, res, next) => {
+    try {
+        const signature = req.headers['x-razorpay-signature'];
+        if (!signature) {
+            return errorResponse(res, 400, 'Missing webhook signature');
+        }
+
+        const isValid = paymentService.verifyWebhookSignature(req.body, signature);
+        if (!isValid) {
+            return errorResponse(res, 400, 'Invalid webhook signature');
+        }
+
+        const payload = JSON.parse(req.body.toString('utf8'));
+
+        if (payload.event === 'payment.captured') {
+            await paymentService.handlePaymentCapturedWebhook(payload);
+        }
+
+        return res.status(200).json({ received: true });
+    } catch (error) {
         next(error);
     }
 };

@@ -13,6 +13,7 @@ const DESIGN_CATEGORIES = [
     'temple-designs',
     '3d-doors-design',
     'other',
+    // 3D subcategories
     '3d-animals',
     '3d-bed',
     '3d-carnish',
@@ -32,11 +33,49 @@ const DESIGN_CATEGORIES = [
     '3d-wall-decor',
     '3d-wall-panel',
     'other-3d-designs',
+    // 3D Door subcategories
     '3d-modern-panel-doors',
     '3d-latest-panel-door',
     '3d-borderless-mdf-door',
     '3d-traditional-panel-door',
     '3d-unique-door',
+    // New expanded categories
+    'signage',
+    'decorative-panels',
+    'jewelry',
+    'mechanical',
+    // Furniture subcategories
+    'furniture-chairs',
+    'furniture-tables',
+    'furniture-cabinets',
+    'furniture-beds',
+    'furniture-shelves',
+    'furniture-decor',
+    // Signage subcategories
+    'signage-business',
+    'signage-restaurant',
+    'signage-wedding',
+    'signage-wayfinding',
+    'signage-led-letters',
+    // Decorative panels subcategories
+    'panel-floral',
+    'panel-geometric',
+    'panel-traditional',
+    'panel-mandala',
+    'panel-border',
+    // Mechanical parts subcategories
+    'mechanical-gears',
+    'mechanical-mounts',
+    'mechanical-enclosures',
+    'mechanical-jigs',
+    'mechanical-prototypes',
+    // Jewelry subcategories
+    'jewelry-rings',
+    'jewelry-pendants',
+    'jewelry-earrings',
+    'jewelry-brooches',
+    'jewelry-boxes',
+    'jewelry-keychains',
 ];
 
 const CNC_FILE_EXTENSIONS = ['.stl', '.dxf', '.svg', '.obj', '.nc', '.gcode', '.tap', '.ngc', '.cmx', '.rlf', '.art'];

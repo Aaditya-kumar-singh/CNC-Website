@@ -67,7 +67,7 @@ const UserManagement = () => {
             setUsers(data.users || []);
             setTotalPages(data.pages || 1);
             setTotal(data.total || 0);
-        } catch (e) {
+        } catch (_error) {
             toast.error('Failed to load users');
         } finally {
             setLoading(false);

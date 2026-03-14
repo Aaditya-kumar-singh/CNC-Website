@@ -2,13 +2,17 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User.model');
 const { errorResponse, serverError } = require('../utils/responseHandler');
 
+const getTokenFromCookies = (cookieHeader = '') => {
+    const cookies = cookieHeader.split(';').map((cookie) => cookie.trim());
+    const authCookie = cookies.find((cookie) => cookie.startsWith('auth_token='));
+    return authCookie ? decodeURIComponent(authCookie.split('=').slice(1).join('=')) : null;
+};
+
 exports.protect = async (req, res, next) => {
     try {
-        let token;
-        if (
-            req.headers.authorization &&
-            req.headers.authorization.startsWith('Bearer')
-        ) {
+        let token = getTokenFromCookies(req.headers.cookie);
+
+        if (!token && req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
             token = req.headers.authorization.split(' ')[1];
         }
 
@@ -16,17 +20,13 @@ exports.protect = async (req, res, next) => {
             return errorResponse(res, 401, 'You are not logged in. Please log in to get access.');
         }
 
-        // Verify token signature and expiry
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-        // Check user still exists (not deleted)
         const currentUser = await User.findById(decoded.id);
+
         if (!currentUser) {
             return errorResponse(res, 401, 'The user belonging to this token no longer exists.');
         }
 
-        // Check if user changed password AFTER the token was issued
-        // This invalidates all tokens issued before the last password change
         if (currentUser.changedPasswordAfter(decoded.iat)) {
             return errorResponse(res, 401, 'Your password was recently changed. Please log in again.');
         }

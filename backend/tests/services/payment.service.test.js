@@ -19,17 +19,18 @@ describe('Payment Service', () => {
     });
 
     describe('createRazorpayOrder', () => {
-        it('should create order on Razorpay and DB', async () => {
-            const mockDesign = { price: 500, _id: 'design123' };
+        it('should create a multi-item order on Razorpay and DB', async () => {
+            const mockDesigns = [{ price: 500, _id: 'design123', uploadedBy: 'seller1' }];
             const mockUserId = 'user123';
             const mockRazorpayOrder = { id: 'rzp_order_123' };
 
+            Order.countDocuments.mockResolvedValue(0);
             razorpay.orders.create.mockResolvedValue(mockRazorpayOrder);
             Order.create.mockResolvedValue({});
 
             jest.spyOn(Date, 'now').mockReturnValue(1000);
 
-            const result = await paymentService.createRazorpayOrder(mockDesign, mockUserId);
+            const result = await paymentService.createRazorpayOrder(mockDesigns, mockUserId);
 
             expect(razorpay.orders.create).toHaveBeenCalledWith({
                 amount: 50000,
@@ -38,7 +39,7 @@ describe('Payment Service', () => {
             });
             expect(Order.create).toHaveBeenCalledWith({
                 userId: mockUserId,
-                designId: 'design123',
+                designIds: ['design123'],
                 amount: 500,
                 orderId: 'rzp_order_123'
             });
@@ -52,21 +53,25 @@ describe('Payment Service', () => {
         it('should verify signature and fulfill order', async () => {
             const orderId = 'order123';
             const paymentId = 'pay123';
-            const sign = orderId + "|" + paymentId;
-            const signature = crypto.createHmac("sha256", 'test_secret').update(sign.toString()).digest("hex");
+            const sign = `${orderId}|${paymentId}`;
+            const signature = crypto.createHmac('sha256', 'test_secret').update(sign).digest('hex');
+            const save = jest.fn().mockResolvedValue(undefined);
 
-            Order.findOneAndUpdate.mockResolvedValue({ designId: 'design123' });
+            Order.findOne.mockResolvedValue({
+                orderId,
+                userId: 'user123',
+                designIds: ['design123'],
+                paymentStatus: 'pending',
+                save
+            });
 
             const result = await paymentService.verifyAndFulfillPayment(orderId, paymentId, signature, 'user123');
 
-            expect(Order.findOneAndUpdate).toHaveBeenCalledWith(
-                { orderId },
-                { paymentStatus: 'success', paymentId },
-                { new: true }
-            );
             expect(User.findByIdAndUpdate).toHaveBeenCalledWith('user123', {
-                $addToSet: { purchasedDesigns: 'design123' }
+                $addToSet: { purchasedDesigns: { $each: ['design123'] } },
+                $pull: { cart: { $in: ['design123'] } }
             });
+            expect(save).toHaveBeenCalled();
             expect(result).toBe(true);
         });
 

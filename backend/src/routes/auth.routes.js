@@ -8,6 +8,7 @@ const router = express.Router();
 // Public — rate-limited tightly to prevent brute force
 router.post('/register', authLimiter, authController.register);
 router.post('/login', authLimiter, authController.login);
+router.post('/logout', authController.logout);
 router.post('/forgot-password', forgotPasswordLimiter, authController.forgotPassword);
 router.patch('/reset-password/:token', authLimiter, authController.resetPassword);
 

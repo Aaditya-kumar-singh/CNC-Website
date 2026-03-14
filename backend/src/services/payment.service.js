@@ -26,13 +26,11 @@ exports.createRazorpayOrder = async (designs, userId) => {
 
     const totalAmount = designs.reduce((sum, design) => sum + design.price, 0);
 
-    const options = {
+    const order = await razorpay.orders.create({
         amount: Math.round(totalAmount * 100),
         currency: 'INR',
         receipt: `rcpt_${Date.now()}`
-    };
-
-    const order = await razorpay.orders.create(options);
+    });
 
     await Order.create({
         userId,
@@ -42,6 +40,23 @@ exports.createRazorpayOrder = async (designs, userId) => {
     });
 
     return order;
+};
+
+const fulfillOrder = async (order, paymentId) => {
+    if (order.paymentStatus === 'success') {
+        return true;
+    }
+
+    order.paymentStatus = 'success';
+    order.paymentId = paymentId;
+    await order.save();
+
+    await User.findByIdAndUpdate(order.userId, {
+        $addToSet: { purchasedDesigns: { $each: order.designIds } },
+        $pull: { cart: { $in: order.designIds } }
+    });
+
+    return true;
 };
 
 exports.verifyAndFulfillPayment = async (orderId, paymentId, signature, userId) => {
@@ -69,16 +84,31 @@ exports.verifyAndFulfillPayment = async (orderId, paymentId, signature, userId) 
         throw new Error('Unauthorized: This order does not belong to you.');
     }
 
-    if (order.paymentStatus !== 'success') {
-        order.paymentStatus = 'success';
-        order.paymentId = paymentId;
-        await order.save();
+    return fulfillOrder(order, paymentId);
+};
 
-        await User.findByIdAndUpdate(userId, {
-            $addToSet: { purchasedDesigns: { $each: order.designIds } },
-            $pull: { cart: { $in: order.designIds } }
-        });
+exports.verifyWebhookSignature = (payloadBuffer, signature) => {
+    const expectedSignature = crypto
+        .createHmac('sha256', process.env.RAZORPAY_WEBHOOK_SECRET)
+        .update(payloadBuffer)
+        .digest('hex');
+
+    return expectedSignature === signature;
+};
+
+exports.handlePaymentCapturedWebhook = async (payload) => {
+    const paymentEntity = payload?.payload?.payment?.entity;
+    const orderId = paymentEntity?.order_id;
+    const paymentId = paymentEntity?.id;
+
+    if (!orderId || !paymentId) {
+        throw new Error('Invalid Razorpay webhook payload.');
     }
 
-    return true;
+    const order = await Order.findOne({ orderId });
+    if (!order) {
+        return false;
+    }
+
+    return fulfillOrder(order, paymentId);
 };

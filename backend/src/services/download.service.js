@@ -3,6 +3,7 @@ const User = require('../models/User.model');
 
 exports.authorizeAndGenerateUrl = async (design, user) => {
     let isAuthorized = false;
+    const userId = user?._id?.toString() || user?.id?.toString();
 
     if (design.price === 0) {
         // Rule 1: Free design
@@ -15,7 +16,7 @@ exports.authorizeAndGenerateUrl = async (design, user) => {
         const uploadedById = design.uploadedBy?._id
             ? design.uploadedBy._id.toString()
             : design.uploadedBy?.toString();
-        const isOwner = uploadedById === user._id.toString();
+        const isOwner = uploadedById && userId ? uploadedById === userId : false;
 
         const hasPurchased = (user.purchasedDesigns || []).some(
             (purchasedId) => purchasedId.toString() === design._id.toString()

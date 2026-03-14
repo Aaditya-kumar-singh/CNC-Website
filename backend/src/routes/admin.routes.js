@@ -11,5 +11,9 @@ router.use(protect, restrictToAdmin);
 router.get('/stats', adminController.getDashboardStats);
 router.get('/users', adminController.getUsers);
 
+// Seller tier management
+router.patch('/users/:userId/seller-tier', adminController.updateSellerTier);
+router.get('/sellers/:sellerId/stats', adminController.getSellerStats);
+
 module.exports = router;
 

@@ -5,6 +5,7 @@ import api from '../services/api';
 import { ShoppingBag, PackageOpen, DownloadCloud } from 'lucide-react';
 import toast from 'react-hot-toast';
 import placeholderImg from '../assets/wood_part_placeholder.png';
+import getDesignFormat from '../utils/getDesignFormat';
 
 // Fix #1: Use a dedicated backend endpoint that returns only purchased designs
 // instead of fetching ALL designs and filtering client-side
@@ -20,13 +21,6 @@ const SkeletonCard = () => (
         </div>
     </div>
 );
-
-// Fix #2: Derive format from fileKey extension, not title text
-const getFileFormat = (design) => {
-    if (!design.fileKey) return 'DXF';
-    const ext = design.fileKey.split('.').pop().toUpperCase();
-    return ['STL', 'DXF', 'SVG'].includes(ext) ? ext : 'DXF';
-};
 
 const formatBadgeColor = {
     STL: 'bg-purple-100 text-purple-700',
@@ -102,7 +96,7 @@ const MyPurchases = () => {
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 xl:gap-8">
                         {purchasedDesigns.map((design) => {
-                            const fmt = getFileFormat(design); // Fix #2
+                            const fmt = getDesignFormat(design);
                             return (
                                 <Link key={design._id} to={`/design/${design._id}`} className="group bg-white rounded-[2rem] p-3 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 border border-gray-100 flex flex-col h-full cursor-pointer relative">
 

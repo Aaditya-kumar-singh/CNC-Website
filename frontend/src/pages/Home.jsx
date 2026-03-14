@@ -51,7 +51,6 @@ const Home = () => {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [total, setTotal] = useState(0);
-    const searchTimer = useRef(null);
     const sortRef = useRef(null);
     const filterRef = useRef(null);
 
@@ -133,10 +132,6 @@ const Home = () => {
         setSearch(value);
         setSearchParams(value ? { search: value } : {});
         setPage(1);
-        clearTimeout(searchTimer.current);
-        searchTimer.current = setTimeout(() => {
-            fetchDesigns(value, sort, 1, priceType, fileType);
-        }, 400);
     };
 
     const handleSort = (value) => {

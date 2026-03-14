@@ -108,7 +108,11 @@ exports.createDesign = async (req, res) => {
 // Delete a design (Admin only)
 exports.deleteDesign = async (req, res) => {
     try {
-        const design = await designService.getDesignById(req.params.id);
+        if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+            return errorResponse(res, 404, 'Design not found');
+        }
+
+        const design = await designService.getDesignDocumentById(req.params.id);
 
         if (!design) {
             return errorResponse(res, 404, 'Design not found');

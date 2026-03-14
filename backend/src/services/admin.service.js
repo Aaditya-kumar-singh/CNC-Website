@@ -18,7 +18,7 @@ exports.getDashboardStats = async () => {
     const revenueResult = await Order.aggregate([
         { $match: { paymentStatus: 'success' } },
         { $group: { _id: null, total: { $sum: '$amount' } } }
-    ]);
+    ]) || [];
     const totalRevenue = revenueResult[0]?.total || 0;
 
     // 3. MongoDB Storage Stats
@@ -215,6 +215,77 @@ exports.getAllUsers = async ({ page = 1, limit = 20, search = '', role = '', sor
     ]);
 
     return { users, total, page, pages: Math.ceil(total / limit) };
+};
+
+// ─── Update seller tier ───────────────────────────────────────────────────────
+exports.updateSellerTier = async (userId, tier) => {
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+        throw new Error('Invalid user ID');
+    }
+
+    const validTiers = ['none', 'verified', 'pro', 'topSeller'];
+    if (!validTiers.includes(tier)) {
+        throw new Error('Invalid seller tier. Must be one of: ' + validTiers.join(', '));
+    }
+
+    const updateData = { sellerTier: tier };
+    
+    if (tier !== 'none' && tier !== 'verified') {
+        updateData.sellerVerifiedAt = new Date();
+    }
+
+    const user = await User.findByIdAndUpdate(
+        userId,
+        updateData,
+        { new: true }
+    ).select('name email sellerTier sellerVerifiedAt');
+
+    if (!user) {
+        throw new Error('User not found');
+    }
+
+    return user;
+};
+
+// ─── Get seller stats ─────────────────────────────────────────────────────────
+exports.getSellerStats = async (sellerId) => {
+    if (!mongoose.Types.ObjectId.isValid(sellerId)) {
+        throw new Error('Invalid seller ID');
+    }
+
+    const seller = await User.findById(sellerId)
+        .select('name sellerTier totalSales totalRatings averageRating isProfileComplete sellerDescription sellerLocation sellerVerifiedAt');
+
+    if (!seller) {
+        throw new Error('Seller not found');
+    }
+
+    const designCount = await Design.countDocuments({ uploadedBy: sellerId, isActive: true });
+    
+    const salesData = await Order.aggregate([
+        { $match: { paymentStatus: 'success' } },
+        { $unwind: '$designIds' },
+        { $lookup: {
+            from: 'designs',
+            localField: 'designIds',
+            foreignField: '_id',
+            as: 'design'
+        }},
+        { $unwind: '$design' },
+        { $match: { 'design.uploadedBy': new mongoose.Types.ObjectId(sellerId) } },
+        { $group: { 
+            _id: null, 
+            totalRevenue: { $sum: '$design.price' },
+            orderCount: { $sum: 1 }
+        }}
+    ]);
+
+    return {
+        seller,
+        designCount,
+        totalRevenue: salesData[0]?.totalRevenue || 0,
+        orderCount: salesData[0]?.orderCount || 0
+    };
 };
 
 

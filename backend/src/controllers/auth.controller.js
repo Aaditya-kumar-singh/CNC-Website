@@ -3,21 +3,21 @@ const { successResponse, errorResponse } = require('../utils/responseHandler');
 const authService = require('../services/auth.service');
 const sendEmail = require('../services/email.service');
 const validateWithZod = require('../utils/validateWithZod');
+const { getAuthCookieOptions } = require('../utils/authCookie');
 const { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } = require('../validators/auth.validator');
 
-const signToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET, {
-        expiresIn: process.env.JWT_EXPIRES_IN
-    });
-};
+const signToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN
+});
 
 const createSendToken = (user, statusCode, res) => {
     const token = signToken(user._id);
 
+    res.cookie('auth_token', token, getAuthCookieOptions());
+
     user.password = undefined;
 
     successResponse(res, statusCode, {
-        token,
         data: { user }
     });
 };
@@ -54,12 +54,21 @@ exports.login = async (req, res) => {
         }
 
         createSendToken(user, 200, res);
-    } catch (_error) {
-        if (_error.statusCode === 400) {
-            return errorResponse(res, 400, _error.message);
+    } catch (error) {
+        if (error.statusCode === 400) {
+            return errorResponse(res, 400, error.message);
         }
         errorResponse(res, 401, 'Incorrect email or password');
     }
+};
+
+exports.logout = async (req, res) => {
+    res.clearCookie('auth_token', {
+        ...getAuthCookieOptions(),
+        maxAge: undefined,
+    });
+
+    successResponse(res, 200, { message: 'Logged out successfully' });
 };
 
 exports.getMe = async (req, res) => {
@@ -82,7 +91,7 @@ exports.forgotPassword = async (req, res) => {
             return successResponse(res, 200, { message: 'If this email exists in our system, a reset link has been sent.' });
         }
 
-        const resetURL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password/${result.resetToken}`;
+        const resetURL = `${process.env.FRONTEND_URL}/reset-password/${result.resetToken}`;
         const message = `Forgot your password? Click here to reset it:\n${resetURL}\nIf you didn't forget your password, please ignore this email!`;
 
         try {
@@ -92,13 +101,12 @@ exports.forgotPassword = async (req, res) => {
                 message
             });
             successResponse(res, 200, { message: 'If this email exists in our system, a reset link has been sent.' });
-        } catch (_err) {
+        } catch (_error) {
             result.user.resetPasswordToken = undefined;
             result.user.resetPasswordExpire = undefined;
             await result.user.save({ validateBeforeSave: false });
             return errorResponse(res, 500, 'There was an error sending the email. Try again later.');
         }
-
     } catch (error) {
         errorResponse(res, 400, error.message);
     }

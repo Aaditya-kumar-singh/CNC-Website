@@ -45,6 +45,19 @@ const userSchema = new mongoose.Schema({
     resetPasswordExpire: Date,
     // Track when password last changed so old JWTs auto-invalidate
     passwordChangedAt: Date,
+    // Seller verification tiers
+    sellerTier: {
+        type: String,
+        enum: ['none', 'verified', 'pro', 'topSeller'],
+        default: 'none'
+    },
+    sellerVerifiedAt: Date,
+    totalSales: { type: Number, default: 0 },
+    totalRatings: { type: Number, default: 0 },
+    averageRating: { type: Number, default: 0 },
+    isProfileComplete: { type: Boolean, default: false },
+    sellerDescription: String,
+    sellerLocation: String,
 }, {
     timestamps: true
 });

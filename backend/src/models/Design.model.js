@@ -46,7 +46,16 @@ const designSchema = new mongoose.Schema({
     downloads: {
         type: Number,
         default: 0
-    }
+    },
+    complexity: {
+        type: String,
+        enum: ['beginner', 'intermediate', 'advanced', 'expert'],
+        default: 'intermediate'
+    },
+    softwareCompatibility: [{
+        type: String,
+        enum: ['Vectric', 'Fusion 360', 'LightBurn', 'LaserGRBL', 'ArtCAM', 'Cambam', 'SolidWorks', 'Blender', 'Other']
+    }]
 }, {
     timestamps: true
 });

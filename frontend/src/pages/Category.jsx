@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import placeholderImg from '../assets/wood_part_placeholder.png';
 import SEO from '../components/SEO';
 import { categoryDetails } from '../content/categories';
+import getDesignFormat from '../utils/getDesignFormat';
 
 const SkeletonCard = () => (
     <div className="animate-pulse bg-white rounded-3xl p-3 flex flex-col h-full shadow-sm border border-gray-100">
@@ -19,12 +20,6 @@ const SkeletonCard = () => (
         </div>
     </div>
 );
-
-const getFileFormat = (design) => {
-    if (!design.fileKey) return 'DXF';
-    const ext = design.fileKey.split('.').pop().toUpperCase();
-    return ['STL', 'DXF', 'SVG'].includes(ext) ? ext : 'DXF';
-};
 
 const formatBadgeColor = {
     STL: 'bg-purple-100 text-purple-700',
@@ -113,7 +108,7 @@ const Category = () => {
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 xl:gap-8">
                         {designs.map((design) => {
-                            const fmt = getFileFormat(design);
+                            const fmt = getDesignFormat(design);
                             return (
                                 <Link key={design._id} to={`/design/${design._id}`} className="group bg-white rounded-[2rem] p-3 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 flex flex-col h-full cursor-pointer">
                                     <figure className="relative aspect-[4/3] w-full rounded-[1.5rem] overflow-hidden bg-gray-50 mb-4 shrink-0">

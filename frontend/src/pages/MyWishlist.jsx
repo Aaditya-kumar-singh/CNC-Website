@@ -2,10 +2,11 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { getMyWishlist, toggleWishlist } from '../services/auth.service';
-import { Heart, Trash2, ShieldAlert } from 'lucide-react';
+import { Heart, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import PriceTag from '../components/PriceTag';
 import placeholderImg from '../assets/wood_part_placeholder.png';
+import getDesignFormat from '../utils/getDesignFormat';
 
 const SkeletonCard = () => (
     <div className="animate-pulse bg-white rounded-3xl p-3 flex flex-col h-full shadow-sm border border-gray-100">
@@ -18,12 +19,6 @@ const SkeletonCard = () => (
         </div>
     </div>
 );
-
-const getFileFormat = (design) => {
-    if (!design.fileKey) return 'DXF';
-    const ext = design.fileKey.split('.').pop().toUpperCase();
-    return ['STL', 'DXF', 'SVG'].includes(ext) ? ext : 'DXF';
-};
 
 const formatBadgeColor = {
     STL: 'bg-purple-100 text-purple-700',
@@ -112,7 +107,7 @@ const MyWishlist = () => {
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 xl:gap-8">
                         {wishlistDesigns.map((design) => {
-                            const fmt = getFileFormat(design);
+                            const fmt = getDesignFormat(design);
                             return (
                                 <Link key={design._id} to={`/design/${design._id}`} className="group bg-white rounded-[2rem] p-3 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 border border-gray-100 flex flex-col h-full cursor-pointer relative">
 

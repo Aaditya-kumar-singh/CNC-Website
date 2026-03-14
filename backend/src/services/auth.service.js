@@ -1,5 +1,6 @@
 const User = require('../models/User.model');
 const crypto = require('crypto');
+const serializeDesign = require('../utils/serializeDesign');
 
 exports.createUser = async (name, email, password) => {
     return await User.create({ name, email, password });
@@ -19,11 +20,17 @@ exports.getUserProfile = async (userId) => {
 
 // Separate function used only for the /my-purchases endpoint
 exports.getUserWithPurchases = async (userId) => {
-    return await User.findById(userId).populate({
+    const user = await User.findById(userId).populate({
         path: 'purchasedDesigns',
         select: '+fileKey', // Include fileKey so format badge works correctly
         populate: { path: 'uploadedBy', select: 'name' }
     });
+
+    if (user) {
+        user.purchasedDesigns = (user.purchasedDesigns || []).map(serializeDesign);
+    }
+
+    return user;
 };
 
 exports.toggleWishlist = async (userId, designId) => {
@@ -45,12 +52,18 @@ exports.toggleWishlist = async (userId, designId) => {
 };
 
 exports.getUserWishlist = async (userId) => {
-    return await User.findById(userId).populate({
+    const user = await User.findById(userId).populate({
         path: 'wishlist',
         select: '+fileKey',
         match: { isActive: true }, // Only return active designs
         populate: { path: 'uploadedBy', select: 'name' }
     });
+
+    if (user) {
+        user.wishlist = (user.wishlist || []).filter(Boolean).map(serializeDesign);
+    }
+
+    return user;
 };
 
 exports.toggleCart = async (userId, designId) => {
@@ -72,12 +85,18 @@ exports.toggleCart = async (userId, designId) => {
 };
 
 exports.getUserCart = async (userId) => {
-    return await User.findById(userId).populate({
+    const user = await User.findById(userId).populate({
         path: 'cart',
         select: '+fileKey',
         match: { isActive: true },
         populate: { path: 'uploadedBy', select: 'name' }
     });
+
+    if (user) {
+        user.cart = (user.cart || []).filter(Boolean).map(serializeDesign);
+    }
+
+    return user;
 };
 
 exports.clearCart = async (userId) => {

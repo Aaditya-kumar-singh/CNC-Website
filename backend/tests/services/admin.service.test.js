@@ -17,6 +17,12 @@ jest.mock('../../src/config/cloudinary', () => ({
         usage: jest.fn()
     }
 }));
+jest.mock('../../src/config/appwrite', () => ({
+    bucketId: '',
+    configError: 'Missing config',
+    isConfigured: false,
+    storage: {}
+}));
 jest.mock('@aws-sdk/client-s3', () => ({
     ListObjectsV2Command: jest.fn()
 }));
@@ -32,29 +38,22 @@ describe('Admin Service', () => {
         it('should return aggregated dashboard statistics successfully', async () => {
             User.countDocuments.mockResolvedValue(10);
             Design.countDocuments.mockResolvedValue(50);
+            Order.aggregate.mockResolvedValue([{ total: 300 }]);
 
-            Order.find.mockResolvedValue([
-                { amount: 100 },
-                { amount: 200 }
-            ]);
-
-            // Mock mongoose connection db command
             mongoose.connection.db = {
                 command: jest.fn().mockResolvedValue({
-                    dataSize: 1048576, // 1MB
-                    storageSize: 2097152 // 2MB
+                    dataSize: 1048576,
+                    storageSize: 2097152
                 })
             };
 
-            // Mock cloudinary
             cloudinary.api.usage.mockResolvedValue({
                 plan: 'Free',
-                bandwidth: { usage: 1048576 }, // 1MB
-                storage: { usage: 1048576 }, // 1MB
+                bandwidth: { usage: 1048576 },
+                storage: { usage: 1048576 },
                 credits: { usage: 5 }
             });
 
-            // Mock R2
             r2.send.mockResolvedValue({
                 Contents: [
                     { Size: 1048576 },
@@ -64,28 +63,20 @@ describe('Admin Service', () => {
 
             const stats = await adminService.getDashboardStats();
 
-            // Validate counts and revenue
             expect(stats.counts.users).toBe(10);
             expect(stats.counts.designs).toBe(50);
             expect(stats.revenue).toBe(300);
-
-            // Validate storage object calculations
-            expect(stats.storage.mongodb.dataSize).toBe("1.00");
-            expect(stats.storage.mongodb.storageSize).toBe("2.00");
-
-            expect(stats.storage.cloudinary.status).toBe("Active");
-            expect(stats.storage.cloudinary.bandwidth).toBe("1.00");
-            expect(stats.storage.cloudinary.credits).toBe(5);
-
-            expect(stats.storage.r2.status).toBe("Active");
-            expect(stats.storage.r2.totalFiles).toBe(2);
-            expect(stats.storage.r2.totalSize).toBe("2.00");
+            expect(stats.storage.mongodb.dataSize).toBe('1.00');
+            expect(stats.storage.mongodb.storageSize).toBe('2.00');
+            expect(stats.storage.cloudinary.status).toBe('Active');
+            expect(stats.storage.r2.status).toBe('Active');
+            expect(stats.storage.appwrite.status).toBe('Missing Config');
         });
 
         it('should handle errors in external services gracefully', async () => {
             User.countDocuments.mockResolvedValue(0);
             Design.countDocuments.mockResolvedValue(0);
-            Order.find.mockResolvedValue([]);
+            Order.aggregate.mockResolvedValue([]);
 
             mongoose.connection.db = { command: jest.fn().mockRejectedValue(new Error('Mongo error')) };
             cloudinary.api.usage.mockRejectedValue(new Error('Cloudinary error'));

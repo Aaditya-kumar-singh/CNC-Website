@@ -12,13 +12,7 @@ import NotFound from './NotFound';
 import placeholderImg from '../assets/wood_part_placeholder.png';
 import { categoryGroups } from '../content/categories';
 import { storage as appwriteStorage } from '../lib/appwrite';
-
-// Derive format label from fileKey extension
-const getFileFormat = (design) => {
-    if (!design?.fileKey) return null;
-    const ext = design.fileKey.split('.').pop().toUpperCase();
-    return ['STL', 'DXF', 'SVG'].includes(ext) ? ext : null;
-};
+import getDesignFormat from '../utils/getDesignFormat';
 
 const formatBadgeStyle = {
     STL: 'bg-purple-50 text-purple-600 border-purple-100',
@@ -314,7 +308,7 @@ const DesignDetails = () => {
         (pid) => pid.toString() === design._id.toString()  // Fix #3: renamed to avoid shadowing outer `id`
     );
     const isOwner = user?._id?.toString() === design.uploadedBy?._id?.toString();
-    const fmt = getFileFormat(design);
+    const fmt = getDesignFormat(design);
 
     return (
         <div className="min-h-screen bg-[#f8f9fc] pt-8 pb-24 font-sans selection:bg-black selection:text-white">
