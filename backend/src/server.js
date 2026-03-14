@@ -62,10 +62,6 @@ if (missing.length > 0) {
 
 const optionalProductionEnvGroups = [
     {
-        vars: ['BACKEND_URL'],
-        feature: 'local-file download URLs',
-    },
-    {
         vars: ['RAZORPAY_WEBHOOK_SECRET'],
         feature: 'Razorpay webhook verification',
     },
