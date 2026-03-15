@@ -28,6 +28,14 @@ const formatBadgeColor = {
     RAR: 'bg-amber-100 text-amber-700',
     RAR4: 'bg-orange-100 text-orange-700',
     ZIP: 'bg-slate-100 text-slate-700',
+    OBJ: 'bg-pink-100 text-pink-700',
+    NC: 'bg-red-100 text-red-700',
+    GCODE: 'bg-cyan-100 text-cyan-700',
+    TAP: 'bg-teal-100 text-teal-700',
+    NGC: 'bg-indigo-100 text-indigo-700',
+    CMX: 'bg-violet-100 text-violet-700',
+    RLF: 'bg-rose-100 text-rose-700',
+    ART: 'bg-emerald-100 text-emerald-700',
 };
 
 const Category = () => {

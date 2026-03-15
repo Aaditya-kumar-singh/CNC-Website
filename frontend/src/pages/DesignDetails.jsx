@@ -21,6 +21,14 @@ const formatBadgeStyle = {
     RAR: 'bg-amber-50 text-amber-700 border-amber-100',
     RAR4: 'bg-orange-50 text-orange-700 border-orange-100',
     ZIP: 'bg-slate-50 text-slate-700 border-slate-200',
+    OBJ: 'bg-pink-50 text-pink-600 border-pink-100',
+    NC: 'bg-red-50 text-red-600 border-red-100',
+    GCODE: 'bg-cyan-50 text-cyan-600 border-cyan-100',
+    TAP: 'bg-teal-50 text-teal-600 border-teal-100',
+    NGC: 'bg-indigo-50 text-indigo-600 border-indigo-100',
+    CMX: 'bg-violet-50 text-violet-600 border-violet-100',
+    RLF: 'bg-rose-50 text-rose-600 border-rose-100',
+    ART: 'bg-emerald-50 text-emerald-600 border-emerald-100',
 };
 
 const DesignDetails = () => {
@@ -389,7 +397,7 @@ const DesignDetails = () => {
                             {/* Tags ??? derived from actual fileKey extension (#4 fix) */}
                             <div className="absolute top-6 left-6 flex gap-2 z-10">
                                 {fmt && (
-                                    <span className={`px-4 py-1.5 rounded-full text-xs font-bold border tracking-wider ${formatBadgeStyle[fmt]}`}>
+                                    <span className={`px-4 py-1.5 rounded-full text-xs font-bold border tracking-wider ${formatBadgeStyle[fmt] || 'bg-gray-50 text-gray-600 border-gray-100'}`}>
                                         {fmt}
                                     </span>
                                 )}
