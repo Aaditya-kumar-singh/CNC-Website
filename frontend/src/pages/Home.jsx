@@ -257,7 +257,7 @@ const Home = () => {
                                     <div>
                                         <label className="block text-xs font-bold text-gray-400 mb-2 tracking-widest">FILE FORMAT</label>
                                         <div className="flex flex-wrap gap-2">
-                                            {['all', 'dxf', 'stl', 'svg'].map(type => (
+                                            {['all', 'dxf', 'stl', 'svg', 'rar', 'rar4', 'zip'].map(type => (
                                                 <button
                                                     key={type}
                                                     onClick={() => { setFileType(type); setPage(1); }}

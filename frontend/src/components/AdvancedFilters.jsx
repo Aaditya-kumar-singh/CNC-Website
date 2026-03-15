@@ -5,6 +5,9 @@ const fileTypes = [
     { value: 'dxf', label: 'DXF', color: 'bg-blue-100 text-blue-700' },
     { value: 'stl', label: 'STL', color: 'bg-purple-100 text-purple-700' },
     { value: 'svg', label: 'SVG', color: 'bg-green-100 text-green-700' },
+    { value: 'rar', label: 'RAR', color: 'bg-amber-100 text-amber-700' },
+    { value: 'rar4', label: 'RAR4', color: 'bg-orange-100 text-orange-700' },
+    { value: 'zip', label: 'ZIP', color: 'bg-slate-100 text-slate-700' },
 ];
 
 const priceRanges = [

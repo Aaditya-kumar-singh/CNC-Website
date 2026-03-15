@@ -78,7 +78,7 @@ const DESIGN_CATEGORIES = [
     'jewelry-keychains',
 ];
 
-const CNC_FILE_EXTENSIONS = ['.stl', '.dxf', '.svg', '.obj', '.nc', '.gcode', '.tap', '.ngc', '.cmx', '.rlf', '.art'];
+const CNC_FILE_EXTENSIONS = ['.stl', '.dxf', '.svg', '.obj', '.nc', '.gcode', '.tap', '.ngc', '.cmx', '.rlf', '.art', '.rar', '.rar4', '.zip'];
 
 module.exports = {
     DESIGN_CATEGORIES,

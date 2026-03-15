@@ -10,6 +10,9 @@ const SUPPORTED_DESIGN_FORMATS = new Set([
     'CMX',
     'RLF',
     'ART',
+    'RAR',
+    'RAR4',
+    'ZIP',
 ]);
 
 const getDesignFormat = (design) => {

@@ -18,6 +18,9 @@ const formatBadgeStyle = {
     STL: 'bg-purple-50 text-purple-600 border-purple-100',
     DXF: 'bg-blue-50 text-blue-600 border-blue-100',
     SVG: 'bg-green-50 text-green-600 border-green-100',
+    RAR: 'bg-amber-50 text-amber-700 border-amber-100',
+    RAR4: 'bg-orange-50 text-orange-700 border-orange-100',
+    ZIP: 'bg-slate-50 text-slate-700 border-slate-200',
 };
 
 const DesignDetails = () => {
