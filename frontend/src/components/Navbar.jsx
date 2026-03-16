@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { LogOut, Upload, BarChart3, ShoppingBag, Heart, ShoppingCart, Menu, X, Search, ChevronDown } from 'lucide-react';
 import { categoryGroups } from '../content/categories';
+import navlogo from '../assets/navlogo.png';
 
 const Navbar = () => {
     const { user, logout } = useContext(AuthContext);
@@ -62,10 +63,11 @@ const Navbar = () => {
                     {/* Logo */}
                     <div className="flex-1 lg:flex-none">
                         <Link to="/" className="flex items-center gap-2" onClick={() => setMobileOpen(false)}>
-                            <div className="w-8 h-8 bg-[#111] rounded-lg flex items-center justify-center text-white font-black text-xs tracking-tighter">
-                                CNC
-                            </div>
-                            <span className="font-extrabold text-xl tracking-tight text-[#111]">CNC<span className="text-gray-400 font-medium">Market</span></span>
+                            <img 
+                                src={navlogo}
+                                alt="CNC Market" 
+                                className="h-16 w-auto object-contain"
+                            />
                         </Link>
                     </div>
 

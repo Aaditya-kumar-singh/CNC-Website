@@ -7,7 +7,6 @@ import PriceTag from '../components/PriceTag';
 import { Search, PackageOpen, Star, ChevronDown, ChevronLeft, ChevronRight, X, Heart } from 'lucide-react';
 import toast from 'react-hot-toast';
 import mainImg from '../assets/main_image.jpeg';
-import logoImg from '../assets/logo.ico';
 import DesignCard from '../components/DesignCard';
 import SEO from '../components/SEO';
 import { categoryGroups } from '../content/categories';

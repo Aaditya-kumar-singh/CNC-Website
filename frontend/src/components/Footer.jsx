@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Mail, Phone, Instagram, Facebook, Cookie } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { companyInfo } from '../content/companyInfo';
+import navlogo from '../assets/navlogo.png';
 
 const Footer = () => {
     const { user } = useContext(AuthContext);
@@ -13,12 +14,11 @@ const Footer = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 lg:gap-8">
                     <div className="lg:col-span-2">
                         <div className="flex items-center gap-2 mb-4">
-                            <div className="w-8 h-8 bg-[#111] rounded-lg flex items-center justify-center text-white font-black text-xs tracking-tighter">
-                                CNC
-                            </div>
-                            <span className="font-extrabold text-xl tracking-tight text-[#111]">
-                                CNC<span className="text-gray-400 font-medium">Market</span>
-                            </span>
+                            <img 
+                                src={navlogo}
+                                alt="CNC Market" 
+                                className="h-16 w-auto object-contain"
+                            />
                         </div>
                         <p className="text-gray-500 text-sm leading-relaxed mb-6 max-w-sm">
                             A secure marketplace for premium CNC, DXF, STL and SVG design files. Buy, sell, and download with confidence.
